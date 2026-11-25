@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<!-- MoveWell — Copyright (C) 2026 Ziqing Shi. SPDX-License-Identifier: AGPL-3.0-only -->
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>MoveWell 测试动作指导</title>
+<style>
+  /* VOICE: calm, clinical, warm — a physiotherapist showing you, not a manual shouting at you.
+     IDEA: the printed exercise card a physio hands out, come alive: one figure doing the test in a real room.
+     PICTURE: a 3D stage with the person, the chair, the floor tape and the phone with what it can see.
+     COLOUR and TYPE: MoveWell's own paper, sage and gold; serif titles, system sans for the steps.
+     LAYOUT: a phone: header, test picker, stage, the card for the tab, three tabs at the bottom.
+     IN THE APP (MoveWell/Features/Checks/TestGuideView.swift): no frame, header or picker; the app's own title bar
+     names the test; text follows the app's text size (--ts), language and appearance. */
+  :root {
+    color-scheme: light dark;
+    --paper: #FBF8F4; --card: #F3ECE2; --ink: #3B332D; --ink-2: #6F655B;
+    --sage: #4F6B4C; --sage-soft: #DCE6D3; --gold: #95722F; --gold-soft: #F4E7CB;
+    --line: rgba(59, 51, 45, .13); --stage: #F4EFE7; --floor: #ECE4D7; --grid: rgba(59, 51, 45, .07);
+    --wall: #EFE7DA; --wall-line: rgba(59, 51, 45, .12); --frame: #E9E1D5; --shadow: rgba(70, 50, 35, .18);
+    --serif: ui-serif, "New York", "Iowan Old Style", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", Georgia, serif;
+    --ts: 1;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme=light]) {
+      --paper: #161513; --card: #24221F; --ink: #F3EDE6; --ink-2: #ABA196; --sage: #8FAE88; --sage-soft: #2F3B2C;
+      --gold: #D4B26A; --gold-soft: #3A3121; --line: rgba(243, 237, 230, .15); --stage: #1B1A17; --floor: #24221E;
+      --grid: rgba(243, 237, 230, .06); --wall: #2A2723; --wall-line: rgba(243, 237, 230, .1); --frame: #0D0C0B; --shadow: rgba(0, 0, 0, .45);
+    }
+  }
+  :root[data-theme=dark] {
+    color-scheme: dark;
+    --paper: #161513; --card: #24221F; --ink: #F3EDE6; --ink-2: #ABA196; --sage: #8FAE88; --sage-soft: #2F3B2C;
+    --gold: #D4B26A; --gold-soft: #3A3121; --line: rgba(243, 237, 230, .15); --stage: #1B1A17; --floor: #24221E;
+    --grid: rgba(243, 237, 230, .06); --wall: #2A2723; --wall-line: rgba(243, 237, 230, .1); --frame: #0D0C0B; --shadow: rgba(0, 0, 0, .45);
+  }
+  :root[data-theme=light] { color-scheme: light; }
+  * { box-sizing: border-box; min-width: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--frame); color: var(--ink); font: calc(15px * var(--ts))/1.5 var(--sans); display: grid; place-items: center; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; border-radius: 8px; }
+
+  .device { width: min(100vw, 412px); height: 100vh; height: min(100dvh, 880px); background: var(--paper); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  @media (min-width: 480px) and (min-height: 640px) { .device { border-radius: 38px; border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(40, 30, 20, .2); } }
+  .embed body { background: var(--paper); }
+  .embed .device { width: 100vw; height: 100vh; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+  .embed .top, .embed .picker { display: none; }
+  .embed .stage { min-height: 200px; }
+
+  .top { flex: 0 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 16px 20px 8px; }
+  .brand { font: 600 calc(21px * var(--ts))/1.1 var(--serif); }
+  .sub { font-size: calc(13px * var(--ts)); color: var(--ink-2); margin-top: 3px; }
+  .lang { display: flex; background: var(--card); border-radius: 999px; padding: 3px; flex: none; }
+  .lang button { border: 0; background: none; padding: 4px 11px; border-radius: 999px; font-size: calc(12px * var(--ts)); font-weight: 600; color: var(--ink-2); cursor: pointer; min-height: 30px; }
+  .lang button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+
+  .picker { flex: 0 0 auto; display: flex; gap: 6px; overflow-x: auto; padding: 2px 20px 10px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .picker::-webkit-scrollbar { display: none; }
+  .picker button { flex: none; scroll-snap-align: start; border: 0; background: var(--card); color: var(--ink-2); padding: 7px 13px; border-radius: 999px; font-size: calc(13px * var(--ts)); font-weight: 600; cursor: pointer; min-height: 36px; white-space: nowrap; }
+  .picker button[aria-pressed="true"] { background: var(--sage); color: var(--paper); }
+  .picker button .new { display: inline-block; margin-left: 5px; font-size: calc(10px * var(--ts)); padding: 0 5px; border-radius: 999px; background: var(--gold-soft); color: var(--gold); vertical-align: 1px; }
+  .picker button[aria-pressed="true"] .new { background: rgba(255,255,255,.22); color: var(--paper); }
+
+  .stage { flex: 1 1 0; min-height: 230px; position: relative; background: var(--stage); }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  .stage canvas:active { cursor: grabbing; }
+  .chips { position: absolute; left: 14px; right: 14px; top: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
+  .chip { font-size: calc(13px * min(var(--ts), 1.25)); font-weight: 600; font-variant-numeric: tabular-nums; padding: 5px 11px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); white-space: nowrap; }
+  .chip.main { color: var(--sage); }
+  .chip.note { color: var(--ink-2); font-weight: 500; font-size: calc(12px * min(var(--ts), 1.25)); margin-left: auto; }
+  .chip.bad { color: var(--gold); }
+  .cue { position: absolute; left: 0; right: 0; top: 38%; text-align: center; font: 600 calc(34px * min(var(--ts), 1.25))/1 var(--serif); color: var(--sage); opacity: 0; transition: opacity .25s, transform .25s; transform: scale(.92); pointer-events: none; text-shadow: 0 1px 0 var(--paper); }
+  .cue.on { opacity: 1; transform: none; }
+  .frame-check { position: absolute; left: 14px; right: 14px; bottom: 12px; text-align: center; pointer-events: none; }
+  .frame-check span { display: inline-block; font-size: calc(12.5px * min(var(--ts), 1.25)); font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); }
+  .frame-check .ok { color: var(--sage); } .frame-check .warn { color: var(--gold); }
+  .hint { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: calc(12px * min(var(--ts), 1.25)); color: var(--ink-2); pointer-events: none; transition: opacity .5s; }
+  .hint.gone { opacity: 0; }
+
+  .panel { flex: 0 1 auto; max-height: 50%; overflow: auto; padding: 14px 20px 12px; }
+  .panel h2 { font: 600 calc(20px * min(var(--ts), 1.3))/1.28 var(--serif); margin: 0 0 4px; }
+  .panel p { margin: 0 0 12px; color: var(--ink-2); font-size: calc(14px * var(--ts)); }
+  .panel h3 { font: 600 calc(13px * var(--ts))/1.3 var(--sans); color: var(--ink-2); margin: 14px 0 6px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 10px; }
+  .btn { border: 0; background: var(--card); padding: 8px 14px; border-radius: 999px; font-size: calc(14px * var(--ts)); font-weight: 600; cursor: pointer; min-height: 38px; }
+  .btn[aria-pressed="true"] { background: var(--sage-soft); color: var(--sage); }
+  .btn.primary { background: var(--sage); color: var(--paper); }
+  .btn.wide { width: 100%; min-height: 46px; font-size: calc(15px * var(--ts)); }
+  .seg { display: inline-flex; background: var(--card); border-radius: 999px; padding: 3px; }
+  .seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; font-size: calc(13px * var(--ts)); font-weight: 600; color: var(--ink-2); cursor: pointer; min-height: 32px; }
+  .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px var(--shadow); }
+
+  ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 8px 10px; margin: 0 -10px; border-radius: 14px; cursor: pointer; font-size: calc(14.5px * var(--ts)); line-height: 1.45; }
+  ol.steps li::before { content: counter(s); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--card); color: var(--ink-2); font-size: calc(12px * var(--ts)); font-weight: 700; }
+  ol.steps li[aria-current="step"] { background: var(--sage-soft); }
+  ol.steps li[aria-current="step"]::before { background: var(--sage); color: var(--paper); }
+  ol.steps li small { display: block; color: var(--ink-2); font-size: calc(12.5px * var(--ts)); }
+
+  ul.list { list-style: none; margin: 0; padding: 0; }
+  ul.list li { position: relative; padding: 3px 0 3px 22px; font-size: calc(14px * var(--ts)); }
+  ul.list li::before { content: ""; position: absolute; left: 4px; top: .72em; width: 7px; height: 7px; border-radius: 50%; background: var(--sage); }
+  ul.list.bad li::before { background: var(--gold); border-radius: 1px; transform: rotate(45deg); }
+  ul.list.safe li::before { background: var(--ink-2); }
+  .tag { display: inline-block; font-size: calc(12px * var(--ts)); font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--sage-soft); color: var(--sage); margin-right: 6px; }
+  .tag.gold { background: var(--gold-soft); color: var(--gold); }
+  .src { font-size: calc(12px * var(--ts)); color: var(--ink-2); margin-top: 12px; }
+
+  .fade { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin: 2px 0 8px; font-size: calc(13px * var(--ts)); font-weight: 600; }
+  .key { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .key i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .key.bad { color: var(--gold); } .key.bad i { background: #D2B26B; }
+  .key.ok { color: var(--sage); } .key.ok i { background: #7E9B78; }
+  .key.bad.ref { color: var(--ink-2); } .key.bad.ref i { background: #B7B0A7; }
+  #moveTags { margin: -6px 0 10px; } #moveTags:empty { display: none; }
+  input[type=range] { width: 100%; accent-color: var(--sage); margin: 0; height: 28px; }
+  .caption.ref { background: var(--card); }
+  .caption { font-size: calc(13.5px * var(--ts)); color: var(--ink); background: var(--gold-soft); border-radius: 12px; padding: 8px 11px; margin: 4px 0 4px; }
+
+  .tabs { flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+  .tabs button { border: 0; background: none; padding: 15px 4px 14px; line-height: 1.2; font-size: calc(14px * min(var(--ts), 1.2)); font-weight: 600; color: var(--ink-2); cursor: pointer; position: relative; }
+  .tabs button[aria-selected="true"] { color: var(--sage); }
+  .tabs button[aria-selected="true"]::before { content: ""; position: absolute; left: 30%; right: 30%; top: -1px; height: 2px; background: var(--sage); border-radius: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (max-height: 720px) {
+    .top { padding: 10px 20px 6px; } .stage { min-height: 200px; } .panel { padding: 10px 20px 8px; }
+    .panel h2 { font-size: calc(18px * var(--ts)); } ol.steps li { padding: 6px 10px; } .tabs button { padding: 12px 6px 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cue, .hint { transition: none; } }
+</style>
+</head>
+<body>
+<div class="device" id="app">
+  <header class="top">
+    <div>
+      <div class="brand">MoveWell</div>
+      <div class="sub" data-i18n="sub"></div>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="zh">中文</button>
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="es">ES</button>
+    </div>
+  </header>
+
+  <nav class="picker" id="picker" aria-label="Tests"></nav>
+
+  <section class="stage" id="stage">
+    <h2 class="sr-only" id="stageTitle"></h2>
+    <canvas id="view" tabindex="0" role="img"></canvas>
+    <div class="chips"><span class="chip main" id="chipMain"></span><span class="chip note" id="chipNote" hidden></span></div>
+    <div class="cue" id="cue" aria-hidden="true"></div>
+    <div class="frame-check" id="frameCheck" hidden><span id="frameText"></span></div>
+    <div class="hint" id="hint" data-i18n="hint"></div>
+  </section>
+
+  <section class="panel" id="panel-move">
+    <h2 id="moveTitle"></h2>
+    <p id="moveShows"></p>
+    <div id="moveTags"></div>
+    <ol class="steps" id="steps"></ol>
+    <div class="row">
+      <button class="btn" type="button" id="play"></button>
+      <button class="btn" type="button" id="slow" aria-pressed="false" data-i18n="slow"></button>
+      <div class="seg" role="group" id="views">
+        <button type="button" data-view="front" data-i18n="v_front"></button>
+        <button type="button" data-view="side" data-i18n="v_side"></button>
+        <button type="button" data-view="above" data-i18n="v_above"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-setup" hidden>
+    <h2 data-i18n="setup_title"></h2>
+    <button class="btn primary wide" type="button" id="phoneBtn" aria-pressed="false"></button>
+    <h3 data-i18n="h_need"></h3>
+    <ul class="list" id="need"></ul>
+    <h3 data-i18n="h_gate" id="gateTitle"></h3>
+    <ul class="list safe" id="gate"></ul>
+    <h3 data-i18n="h_phone"></h3>
+    <p id="phoneText" style="margin-bottom:4px"></p>
+    <div id="phoneTags"></div>
+    <h3 data-i18n="h_helper"></h3>
+    <p id="helperText"></p>
+  </section>
+
+  <section class="panel" id="panel-points" hidden>
+    <h2 data-i18n="points_title"></h2>
+    <div id="fadeBox">
+      <div class="fade">
+        <span class="key bad"><i></i><span data-i18n="k_bad"></span></span>
+        <input type="range" id="mix" min="0" max="100" value="50">
+        <span class="key ok"><i></i><span data-i18n="k_ok"></span></span>
+      </div>
+      <div class="row" style="margin:2px 0 6px">
+        <div class="seg" role="group" id="cmp">
+          <button type="button" data-cmp="side" data-i18n="m_side"></button>
+          <button type="button" data-cmp="overlay" data-i18n="m_overlay"></button>
+        </div>
+      </div>
+      <div class="caption" id="badCaption"></div>
+    </div>
+    <h3 data-i18n="h_counts"></h3>
+    <ul class="list" id="counts"></ul>
+    <h3 data-i18n="h_bad"></h3>
+    <ul class="list bad" id="bads"></ul>
+    <h3 data-i18n="h_safe"></h3>
+    <ul class="list safe" id="safe"></ul>
+    <div class="src" id="src"></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="move" aria-selected="true" data-i18n="tab_move"></button>
+    <button type="button" role="tab" data-tab="setup" aria-selected="false" data-i18n="tab_setup"></button>
+    <button type="button" role="tab" data-tab="points" aria-selected="false" data-i18n="tab_points"></button>
+  </nav>
+</div>
+
+<script>
+{
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* ============================================================ the app */
+// In MoveWell this page is shown by the app (Features/Checks/TestGuideView.swift), which sets window.__MW_CONFIG__
+// before the page runs: { test: the CheckKind's raw value, tab: move | setup | points, lang: zh | en | es,
+// theme: light | dark, ts: text scale }. The same can go in the address to try it in a browser:
+// index.html?embed=1&test=turn180&lang=es&tab=setup
+const CFG = Object.assign(Object.fromEntries(new URLSearchParams(location.search)), window.__MW_CONFIG__ || {});
+const EMBED = !!window.__MW_CONFIG__ || CFG.embed === '1';
+if (EMBED) {
+  document.documentElement.classList.add('embed');
+  // the page fills the app's screen; pinching zooms the figure, not the page
+  document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+}
+const LANGS = ['zh', 'en', 'es'];
+
+/* ================================================================ words */
+const UI = {
+  zh: {
+    sub: '测试动作指导 · 演示（示范动作）', hint: '拖动可以绕着看，双指或滚轮缩放', hint_touch: '拖动可以绕着看，双指缩放',
+    tab_move: '动作', tab_setup: '摆放', tab_points: '要点',
+    play: '播放', pause: '暂停', slow: '慢动作', v_front: '正面', v_side: '侧面', v_above: '俯视',
+    setup_title: '东西怎么摆，手机放哪', phone_on: '回到全景', phone_off: '看看手机拍到什么',
+    h_need: '需要准备', h_phone: '手机', h_helper: '帮手', h_gate: '先确认：有一条不符合，今天就不做这项',
+    points_title: '做对的样子', k_bad: '常见错误', k_ok: '正确', m_overlay: '叠加', m_side: '并排', h_counts: '怎样才算', h_bad: '常见错误', h_safe: '注意安全',
+    portrait: '竖放', landscape: '横放', height: '离地约 {h}', dist: '距离 {d}',
+    timer: '⏱ {s} 秒', count: '第 {n} 次', done: '已做 {n} 次', left: '还剩 {s} 秒', go: '开始！', stop: '停！',
+    fast: '演示已加速', short: '演示：{real} 缩短成 {demo} 秒',
+    frame_ok: '✓ 整个测试过程中，全身都在画面里', frame_bad: '有时出了画面：{parts}', frame_scene_ok: '✓ {what}也都在画面里', frame_scene_bad: '看不全{what}',
+    part_head: '头', part_feet: '脚', part_hands: '手', sep: '、',
+    view_label: '{name}的示范动画。拖动或用方向键旋转。', new: '新',
+    src: '依据：{s}',
+  },
+  en: {
+    sub: 'How to do each test · demo (sample movements)', hint: 'Drag to look around; pinch or scroll to zoom', hint_touch: 'Drag to look around; pinch to zoom',
+    tab_move: 'Movement', tab_setup: 'Setup', tab_points: 'Key points',
+    play: 'Play', pause: 'Pause', slow: 'Slow motion', v_front: 'Front', v_side: 'Side', v_above: 'Above',
+    setup_title: 'What goes where, and the phone', phone_on: 'Back to the room', phone_off: 'See what the phone sees',
+    h_need: 'You need', h_phone: 'The phone', h_helper: 'The helper', h_gate: 'First check: if any of these isn’t true, skip this test today',
+    points_title: 'Doing it right', k_bad: 'Common mistake', k_ok: 'Right', m_overlay: 'Overlay', m_side: 'Side by side', h_counts: 'What counts', h_bad: 'Common mistakes', h_safe: 'Safety',
+    portrait: 'Portrait', landscape: 'Landscape', height: 'about {h} off the floor', dist: '{d} away',
+    timer: '⏱ {s} s', count: 'Rep {n}', done: '{n} done', left: '{s} s left', go: 'Go!', stop: 'Stop!',
+    fast: 'Sped up for the demo', short: 'Demo: {real} shortened to {demo} s',
+    frame_ok: '✓ The whole body stays in view for the whole test', frame_bad: 'Out of view at times: {parts}', frame_scene_ok: '✓ {what} in view too', frame_scene_bad: 'Cannot see all of {what}',
+    part_head: 'head', part_feet: 'feet', part_hands: 'hands', sep: ', ',
+    view_label: 'Animated demonstration of the {name}. Drag or use the arrow keys to rotate.', new: 'new',
+    src: 'Based on: {s}',
+  },
+  es: {
+    sub: 'Cómo hacer cada prueba · demostración (movimientos de ejemplo)', hint: 'Arrastre para mirar alrededor; pellizque o use la rueda para acercar', hint_touch: 'Arrastre para mirar alrededor; pellizque para acercar',
+    tab_move: 'Movimiento', tab_setup: 'Preparación', tab_points: 'Claves',
+    play: 'Reproducir', pause: 'Pausa', slow: 'Cámara lenta', v_front: 'Frente', v_side: 'Lado', v_above: 'Arriba',
+    setup_title: 'Qué va dónde, y el teléfono', phone_on: 'Volver a la sala', phone_off: 'Ver lo que ve el teléfono',
+    h_need: 'Necesita', h_phone: 'El teléfono', h_helper: 'Quien ayuda', h_gate: 'Antes, compruebe: si algo de esto no se cumple, hoy no haga esta prueba',
+    points_title: 'Cómo hacerlo bien', k_bad: 'Error frecuente', k_ok: 'Correcto', m_overlay: 'Superpuesto', m_side: 'Lado a lado', h_counts: 'Qué cuenta', h_bad: 'Errores frecuentes', h_safe: 'Seguridad',
+    portrait: 'Vertical', landscape: 'Horizontal', height: 'a unos {h} del suelo', dist: 'a {d}',
+    timer: '⏱ {s} s', count: 'Repetición {n}', done: '{n} hechas', left: 'Quedan {s} s', go: '¡Ya!', stop: '¡Pare!',
+    fast: 'Acelerado para la demostración', short: 'Demostración: {real} acortados a {demo} s',
+    frame_ok: '✓ Todo el cuerpo se ve durante toda la prueba', frame_bad: 'A veces fuera de la imagen: {parts}', frame_scene_ok: '✓ También a la vista: {what}', frame_scene_bad: 'No se ve todo: {what}',
+    part_head: 'la cabeza', part_feet: 'los pies', part_hands: 'las manos', sep: ', ',
+    view_label: 'Demostración animada: {name}. Arrastre o use las flechas para girar.', new: 'nuevo',
+    src: 'Fuente: {s}',
+  },
+};
+const navLang = (navigator.language || '').toLowerCase();
+let lang = LANGS.includes(CFG.lang) ? CFG.lang : navLang.startsWith('zh') ? 'zh' : navLang.startsWith('es') ? 'es' : 'en';
+const t = (k, vars) => { let s = UI[lang][k] ?? k; if (vars) for (const [a, b] of Object.entries(vars)) s = s.split('{' + a + '}').join(b); return s; };
+const keepUnits = x => typeof x === 'string' ? x.replace(/(\d) (?=(?:m|s|cm|kg|lb|°|%)(?![\p{L}]))/gu, '$1\u00a0') : x;
+const L = o => keepUnits((o && typeof o === 'object' && !Array.isArray(o) && ('zh' in o)) ? (o[lang] ?? o.en) : o);
+/** The text in the page's language, from its three wordings. */
+const P = (zh, en, es) => lang === 'zh' ? zh : lang === 'es' ? es : en;
+/** A number in a given language's way (a decimal comma in Spanish); `num` uses the page's language. */
+const fmt = (x, d, l) => l === 'es' ? x.toFixed(d).replace('.', ',') : x.toFixed(d);
+const num = (x, d = 1) => fmt(x, d, lang);
+
+/* ================================================================= math */
+const TAU = Math.PI * 2, UP = [0, 1, 0];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); };
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const sc = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const len = a => Math.hypot(a[0], a[1], a[2]);
+const unit = a => { const l = len(a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const mix = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
+const facing = y => [Math.sin(y), 0, Math.cos(y)];
+const rightOf = f => unit(cross(f, UP));             // the person's right when facing f
+const rot = (v, k, a) => { const c = Math.cos(a), s = Math.sin(a); return add(add(sc(v, c), sc(cross(k, v), s)), sc(k, dot(k, v) * (1 - c))); };
+const V = (x, y, z) => [x, y, z];
+/** A smooth, repeatable wobble (sum of sines), for sway and tremor. */
+const wob = (tt, seed) => Math.sin(tt * 1.31 + seed) * .6 + Math.sin(tt * 2.73 + seed * 2.1) * .3 + Math.sin(tt * 4.9 + seed * .7) * .1;
+
+/* ============================================================= the body */
+// An older adult of 1.65 m (segment lengths from Winter's anthropometric table), metres. Faceless, like MoveGrow.
+const B = { thigh: .41, shin: .41, ankleH: .08, toe: .17, heel: .06, hipHalf: .09, torso: .48, shHalf: .17, shDrop: .035,
+            neck: .07, headR: .105, upper: .29, fore: .25 };
+const STAND_Y = B.ankleH + (B.thigh + B.shin) * .985;
+const SEAT_H = .45, HIP_SEAT = .09;
+
+/** Two-link IK: the middle joint for ends a and c, bending towards `pole`. */
+function ik2(a, c, l1, l2, pole) {
+  const d = sub(c, a), dir = unit(d);
+  const L0 = clamp(len(d), Math.abs(l1 - l2) + 1e-4, l1 + l2 - 1e-4);
+  const x = (l1 * l1 - l2 * l2 + L0 * L0) / (2 * L0), h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
+  let p = sub(pole, sc(dir, dot(pole, dir)));
+  if (len(p) < 1e-6) p = Math.abs(dir[1]) < .9 ? cross(dir, UP) : [1, 0, 0];
+  return add(add(a, sc(dir, x)), sc(unit(p), h));
+}
+
+const ARM_HANG = { flex: .05, abd: .1, elbow: .18 };
+
+/** The joints of a body from a pose: pelvis position, facing (yaw), trunk lean and roll, world ankle positions
+    (legs solved by IK, knees forward), foot yaw and pitch, arms by angles, hand target, crossed or on the thighs. */
+function makeBody(s) {
+  const f = facing(s.yaw), r = rightOf(f);
+  let up = add(sc(UP, Math.cos(s.lean || 0)), sc(f, Math.sin(s.lean || 0)));
+  if (s.roll) up = rot(up, f, s.roll);
+  up = unit(up);
+  const tf = unit(sub(f, sc(up, dot(f, up)))), tr = unit(cross(tf, up));
+  const J = { up, tf, tr, f, pelvis: s.p };
+  J.neck = add(s.p, sc(up, B.torso));
+  for (const [S, sg] of [['L', -1], ['R', 1]]) {
+    J['hip' + S] = add(s.p, sc(r, sg * B.hipHalf));
+    const ft = (s.feet && s.feet[S]) || {};
+    const fd = facing(ft.yaw ?? s.yaw), fr = rightOf(fd), pitch = ft.pitch || 0;
+    const ank = s.ankles[S];
+    J['ankle' + S] = ank;
+    J['knee' + S] = ik2(J['hip' + S], ank, B.thigh, B.shin, add(fd, sc(UP, .1)));
+    J['toe' + S] = add(ank, rot(add(sc(fd, B.toe), sc(UP, -B.ankleH * .5)), fr, pitch));
+    J['heel' + S] = add(ank, rot(add(sc(fd, -B.heel), sc(UP, -B.ankleH * .5)), fr, pitch));
+    J['sh' + S] = add(add(J.neck, sc(up, -B.shDrop)), sc(tr, sg * B.shHalf));
+  }
+  for (const [S, sg] of [['L', -1], ['R', 1]]) {
+    const a = (s.arms && s.arms[S]) || ARM_HANG;
+    const [el, wr, fdir] = armJoints(J, S, sg, a);
+    J['el' + S] = el; J['wr' + S] = wr; J['hand' + S] = add(wr, sc(fdir, .055)); J['fdir' + S] = fdir;
+  }
+  const hp = (s.head && s.head.pitch) || 0, hy = (s.head && s.head.yaw) || 0;
+  const hu = unit(add(sc(up, Math.cos(hp)), sc(tf, Math.sin(hp))));
+  let hf = unit(add(sc(tf, Math.cos(hp)), sc(up, -Math.sin(hp))));
+  if (hy) hf = rot(hf, hu, hy);
+  J.hu = hu; J.hf = hf;
+  J.head = add(J.neck, sc(hu, B.neck + B.headR * .92));
+  return J;
+}
+
+function armTarget(J, S, sg, a) {
+  const up = J.up, tf = J.tf, out = sc(J.tr, sg);
+  if (a.cross) {                       // arms crossed on the chest: the hand rests below the other shoulder
+    const other = J[(S === 'L' ? 'shR' : 'shL')];
+    return { hand: add(add(other, sc(tf, .11)), sc(up, -.1)), pole: add(add(sc(up, -1), sc(out, .5)), sc(tf, .35)) };
+  }
+  if (a.thigh) {                       // the hand lies on the thigh, near the knee
+    const hip = J['hip' + S], knee = J['knee' + S];
+    return { hand: add(mix(hip, knee, .62), add(sc(UP, .085), sc(out, .01))), pole: add(add(sc(up, -.4), sc(out, .8)), sc(tf, -.4)) };
+  }
+  if (a.hand) return { hand: a.hand, pole: a.pole || add(sc(up, -1), sc(out, .6)) };
+  return null;
+}
+
+function armJoints(J, S, sg, a) {
+  const sh = J['sh' + S];
+  if (a.blend) {                       // between two arm poses (positions blended, then lengths restored by IK)
+    const [p, q] = a.blend.map(b => armJoints(J, S, sg, b));
+    const w = a.k, wr = mix(p[1], q[1], w), el0 = mix(p[0], q[0], w);
+    const el = ik2(sh, wr, B.upper, B.fore, sub(el0, mix(sh, wr, .5)));
+    return [el, wr, unit(sub(wr, el))];
+  }
+  const tg = armTarget(J, S, sg, a);
+  if (tg) {
+    const hand = a.jitter ? add(tg.hand, a.jitter) : tg.hand;
+    const el = ik2(sh, hand, B.upper, B.fore, tg.pole);
+    return [el, hand, unit(sub(hand, el))];
+  }
+  const up = J.up, tf = J.tf, out = sc(J.tr, sg);
+  let d = add(sc(up, -Math.cos(a.flex || 0)), sc(tf, Math.sin(a.flex || 0)));
+  d = unit(add(sc(d, Math.cos(a.abd || 0)), sc(out, Math.sin(a.abd || 0))));
+  const el = add(sh, sc(d, B.upper));
+  let n = sub(tf, sc(d, dot(tf, d)));
+  n = len(n) < 1e-3 ? up : unit(n);
+  const fdir = unit(add(sc(d, Math.cos(a.elbow || 0)), sc(n, Math.sin(a.elbow || 0))));
+  let wr = add(el, sc(fdir, B.fore));
+  if (a.jitter) wr = add(wr, a.jitter);
+  return [el, wr, fdir];
+}
+
+/* --------------------------------------------------------- materials */
+const MAT = {
+  shirt: ['#7E9B78', '#A9C2A3', '#5C7857'], pants: ['#8E9FB0', '#B9C6D2', '#6F8193'], skin: ['#F0C3A6', '#FBE2D2', '#C79074'],
+  hair: ['#D6D1CA', '#EEEBE6', '#A49D94'], shoe: ['#5A524C', '#7A716A', '#3B3530'], wood: ['#B58B5E', '#D2AE83', '#7D5A38'],
+  seat: ['#C9A57A', '#E1C59E', '#8F6B45'], metal: ['#6C7278', '#9AA1A8', '#4A4F54'], phone: ['#2F2C2A', '#57524E', '#1C1A19'],
+  cone: ['#E08A3C', '#F2B27A', '#A85F22'], tape: ['#5B8DD6', '#8FB2E6', '#3E6DB3'], ruler: ['#E5C15A', '#F3DC94', '#B08F2C'],
+  counter: ['#D9D1C4', '#ECE6DC', '#A69C8D'],
+};
+const GOLD = { all: ['#D2B26B', '#E8D29C', '#AC8C45'] };
+const GHOST = { all: ['#B7B0A7', '#D7D1CA', '#8D867D'] };
+
+/** Drawing primitives of a body. `pal`: null for its own colours, or a one-colour palette for a ghost. */
+function bodyPrims(J, extra) {
+  const P = [];
+  const cap = (a, b, ra, rb, c) => P.push({ k: 'cap', a, b, ra, rb, c });
+  const ball = (a, r, c, tag) => P.push({ k: 'ball', a, r, c, tag });
+  for (const S of ['L', 'R']) {
+    cap(J['hip' + S], J['knee' + S], .07, .057, 'pants');
+    cap(J['knee' + S], J['ankle' + S], .055, .043, 'pants');
+    cap(J['heel' + S], J['toe' + S], .043, .037, 'shoe');
+  }
+  cap(J.hipL, J.hipR, .105, .105, 'pants');
+  cap(add(J.pelvis, sc(J.up, .05)), add(J.neck, sc(J.up, -.1)), .135, .15, 'shirt');
+  for (const S of ['L', 'R']) {
+    ball(J['sh' + S], .07, 'shirt');
+    cap(J['sh' + S], J['el' + S], .056, .046, 'shirt');
+    cap(J['el' + S], J['wr' + S], .044, .034, 'skin');
+    ball(J['hand' + S], .046, 'skin');
+  }
+  cap(add(J.neck, sc(J.up, -.03)), add(J.head, sc(J.hu, -.07)), .05, .046, 'skin');
+  ball(J.head, B.headR, 'skin', 'head');
+  ball(add(add(J.head, sc(J.hu, .02)), sc(J.hf, -.022)), B.headR * .985, 'hair', 'hair');
+  if (extra) extra(J, P, cap, ball);
+  return P;
+}
+
+/* ============================================================ the room */
+/** A box (centre, size [width along the right, height, depth along the front], facing yaw) as six faces. */
+function box(P, c, size, yaw, m, z = 0) {
+  const f = facing(yaw), r = rightOf(f);
+  const hx = sc(r, size[0] / 2), hy = sc(UP, size[1] / 2), hz = sc(f, size[2] / 2);
+  const faces = [[hy, hx, hz, 1.08], [sc(hy, -1), hx, hz, .82], [hx, hy, hz, .9], [sc(hx, -1), hy, hz, .9], [hz, hx, hy, .96], [sc(hz, -1), hx, hy, .86]];
+  for (const [n, a, b, light] of faces) {
+    const cc = add(c, n);
+    P.push({ k: 'poly', pts: [add(add(cc, a), b), add(sub(cc, a), b), sub(sub(cc, a), b), sub(add(cc, a), b)], n: unit(n), at: cc, m, light, z });
+  }
+}
+
+function chairPrims(P, ch) {
+  const f = facing(ch.yaw), r = rightOf(f), o = ch.pos;
+  const at = (x, y, zf) => add(add(add(o, sc(r, x)), sc(UP, y)), sc(f, zf));
+  box(P, at(0, SEAT_H - .025, -.22), [.46, .05, .44], ch.yaw, 'seat', .06);
+  box(P, at(0, SEAT_H + .26, -.45), [.44, .44, .04], ch.yaw, 'wood', .04);
+  for (const x of [-.2, .2]) for (const zf of [-.04, -.42]) P.push({ k: 'cap', a: at(x, 0, zf), b: at(x, SEAT_H - .05, zf), ra: .018, rb: .018, c: 'wood', z: .05 });
+  for (const x of [-.2, .2]) P.push({ k: 'cap', a: at(x, SEAT_H, -.45), b: at(x, SEAT_H + .48, -.45), ra: .018, rb: .018, c: 'wood', z: .05 });
+  if (ch.arms) for (const x of [-.265, .265]) {
+    P.push({ k: 'cap', a: at(x, SEAT_H + .22, -.42), b: at(x, SEAT_H + .22, -.05), ra: .026, rb: .026, c: 'wood', z: .03 });
+    P.push({ k: 'cap', a: at(x, SEAT_H - .02, -.07), b: at(x, SEAT_H + .22, -.07), ra: .016, rb: .016, c: 'wood', z: .03 });
+  }
+}
+
+function phonePrims(P, ph) {
+  const d = unit(sub(ph.aim, ph.pos)), yaw = Math.atan2(d[0], d[2]);
+  const hub = sub(ph.pos, [0, ph.land ? .06 : .1, 0]);
+  const fd = facing(yaw), r = rightOf(fd);
+  for (let i = 0; i < 3; i++) {
+    const a = i * TAU / 3 + .5, foot = add(add([hub[0], 0, hub[2]], sc(r, .22 * Math.cos(a))), sc(fd, .22 * Math.sin(a)));
+    P.push({ k: 'cap', a: foot, b: hub, ra: .011, rb: .011, c: 'metal' });
+  }
+  P.push({ k: 'cap', a: hub, b: sub(ph.pos, [0, .03, 0]), ra: .012, rb: .012, c: 'metal' });
+  box(P, ph.pos, ph.land ? [.27, .135, .02] : [.135, .27, .02], yaw + Math.PI, 'phone');   // drawn 1.8× life size, to be seen
+}
+
+/** The test's room: chair, floor tape, cone, wall, counter, wall tape, ruler, phone. Each task lists what it needs. */
+function roomPrims(task, opts) {
+  const P = [], R = task.room;
+  if (R.chair) chairPrims(P, R.chair);
+  if (R.counter) box(P, R.counter.c, R.counter.size, R.counter.yaw || 0, 'counter', .02);
+  if (R.cone) P.push({ k: 'cap', a: R.cone, b: add(R.cone, [0, .32, 0]), ra: .1, rb: .015, c: 'cone' });
+  if (R.ruler) box(P, R.ruler.c, [.035, .008, .32], R.ruler.yaw || 0, 'ruler', -.02);
+  if (opts.phone) phonePrims(P, task.phone);
+  return P;
+}
+
+/* ============================================================== render */
+let colors = {};
+function readColors() {
+  const css = getComputedStyle(document.documentElement), g = k => css.getPropertyValue(k).trim();
+  colors = { floor: g('--floor'), grid: g('--grid'), wall: g('--wall'), wallLine: g('--wall-line'), shadow: g('--shadow'),
+             sage: g('--sage'), gold: g('--gold'), ink: g('--ink'), ink2: g('--ink-2'), paper: g('--paper'), line: g('--line'), stage: g('--stage') };
+}
+
+function orbitCam(c, W, H) {
+  const ce = Math.cos(c.el), se = Math.sin(c.el);
+  const pos = [c.target[0] + c.dist * ce * Math.sin(c.az), c.target[1] + c.dist * se, c.target[2] + c.dist * ce * Math.cos(c.az)];
+  const f = unit(sub(c.target, pos)), r = unit(cross(f, UP)), u = cross(r, f);
+  return { pos, f, r, u, focal: (H / 2) / Math.tan(c.fov / 2), cx: W / 2, cy: H * .5 };
+}
+
+/** The phone's own view: portrait 9:16 (about 69° high, 42° wide, iPhone main camera filming video) or landscape. */
+function phoneCam(ph, W, H) {
+  const f = unit(sub(ph.aim, ph.pos)), r = unit(cross(f, UP)), u = cross(r, f);
+  const vf = (ph.land ? 42.3 : 69) * Math.PI / 180;
+  let rh = H * .86, rw = ph.land ? rh * 16 / 9 : rh * 9 / 16;
+  if (rw > W * .92) { rw = W * .92; rh = ph.land ? rw * 9 / 16 : rw * 16 / 9; }
+  const rect = { x: (W - rw) / 2, y: (H - rh) / 2, w: rw, h: rh };
+  return { pos: ph.pos, f, r, u, focal: (rh / 2) / Math.tan(vf / 2), cx: W / 2, cy: H / 2, rect };
+}
+
+function projector(cam) {
+  return p => { const d = sub(p, cam.pos), z = dot(d, cam.f); return { x: cam.cx + cam.focal * dot(d, cam.r) / z, y: cam.cy - cam.focal * dot(d, cam.u) / z, z, s: cam.focal / z }; };
+}
+
+function capPath(ctx, A, B2, ra, rb) {
+  const ang = Math.atan2(B2.y - A.y, B2.x - A.x);
+  ctx.beginPath();
+  if (Math.hypot(B2.x - A.x, B2.y - A.y) < .5) ctx.arc(A.x, A.y, Math.max(ra, rb), 0, TAU);
+  else { ctx.arc(A.x, A.y, ra, ang + Math.PI / 2, ang - Math.PI / 2); ctx.arc(B2.x, B2.y, rb, ang - Math.PI / 2, ang + Math.PI / 2); }
+  ctx.closePath();
+}
+
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => clamp(Math.round(v * k), 0, 255));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function drawItems(ctx, items, proj, cam, lw, pal) {
+  const near = .08;
+  const list = [];
+  for (const p of items) {
+    if (p.k === 'poly') {
+      if (p.n && dot(p.n, sub(cam.pos, p.at)) <= 0) continue;
+      const Q = p.pts.map(proj);
+      if (Q.some(q => q.z < near)) continue;
+      list.push({ p, Q, z: Q.reduce((s, q) => s + q.z, 0) / Q.length + (p.z || 0) });
+    } else {
+      const A = proj(p.a), B2 = p.b ? proj(p.b) : null;
+      if (A.z < near || (B2 && B2.z < near)) continue;
+      list.push({ p, A, B: B2, z: (B2 ? (A.z + B2.z) / 2 : A.z) + (p.z || 0) });
+    }
+  }
+  // Hair sits behind the head seen from the front and over it seen from behind.
+  const head = list.find(i => i.p.tag === 'head');
+  for (const it of list) if (it.p.tag === 'hair' && head) {
+    const away = dot(sub(it.p.a, head.p.a), cam.f) < 0;
+    it.z = head.z + (away ? -1e-4 : 1e-4);
+  }
+  list.sort((a, b) => b.z - a.z);
+  for (const it of list) {
+    const p = it.p, m = pal ? pal.all : MAT[p.c || p.m];
+    const [base, hi, line] = m;
+    if (p.k === 'poly') {
+      ctx.beginPath(); it.Q.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.closePath();
+      ctx.fillStyle = shade(base, p.light || 1); ctx.fill();
+      ctx.strokeStyle = line; ctx.lineWidth = lw * .8; ctx.lineJoin = 'round'; ctx.stroke();
+    } else if (p.k === 'ball') {
+      const r = p.r * it.A.s;
+      ctx.fillStyle = line; ctx.beginPath(); ctx.arc(it.A.x, it.A.y, r + lw, 0, TAU); ctx.fill();
+      ctx.fillStyle = base; ctx.beginPath(); ctx.arc(it.A.x, it.A.y, r, 0, TAU); ctx.fill();
+      ctx.globalAlpha *= .55; ctx.fillStyle = hi; ctx.beginPath(); ctx.arc(it.A.x - r * .25, it.A.y - r * .28, r * .55, 0, TAU); ctx.fill(); ctx.globalAlpha /= .55;
+    } else {
+      const ra = p.ra * it.A.s, rb = p.rb * it.B.s;
+      ctx.fillStyle = line; capPath(ctx, it.A, it.B, ra + lw, rb + lw); ctx.fill();
+      ctx.fillStyle = base; capPath(ctx, it.A, it.B, ra, rb); ctx.fill();
+      ctx.globalAlpha *= .5; ctx.fillStyle = hi;
+      capPath(ctx, { x: it.A.x - ra * .2, y: it.A.y - ra * .24 }, { x: it.B.x - rb * .2, y: it.B.y - rb * .24 }, ra * .5, rb * .5);
+      ctx.fill(); ctx.globalAlpha /= .5;
+    }
+  }
+}
+
+function floorPoly(ctx, proj, pts) {
+  const Q = pts.map(proj);
+  if (Q.some(q => q.z < .05)) return false;
+  ctx.beginPath(); Q.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.closePath();
+  return true;
+}
+function floorDisc(ctx, proj, c, rx, rz) {
+  const pts = [];
+  for (let i = 0; i < 32; i++) { const a = i / 32 * TAU; pts.push([c[0] + rx * Math.cos(a), .002, c[2] + rz * Math.sin(a)]); }
+  return floorPoly(ctx, proj, pts);
+}
+/** A segment on the floor, clipped to the part in front of the camera. */
+function segment(ctx, proj, a, b) {
+  const A = proj(a), B2 = proj(b);
+  if (A.z < .05 && B2.z < .05) return false;
+  let pa = A, pb = B2;
+  if (A.z < .05 || B2.z < .05) {
+    const k = (.05 - A.z) / (B2.z - A.z), c = proj(mix(a, b, A.z < .05 ? k + .01 : k - .01));
+    if (A.z < .05) pa = c; else pb = c;
+  }
+  ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y);
+  return true;
+}
+
+const layers = [];
+function layer(i, W, H) {
+  const c = layers[i] || (layers[i] = document.createElement('canvas'));
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, W, H);
+  return [c, x];
+}
+
+/** The whole scene: walls, floor (area, metre grid, tape, footprint of the phone's view, measured distances,
+    shadows), then the room's things and the main body sorted by depth, the ghosts as see-through layers, and the
+    labels on top. */
+function render(ctx, W, H, cam, scene) {
+  const proj = projector(cam), lw = Math.max(1, W / 460);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = colors.stage; ctx.fillRect(0, 0, W, H);
+  const R = scene.task.room, labels = [];
+  // walls (only seen from the room side)
+  for (const w of R.walls || []) {
+    if (dot(w.n, sub(cam.pos, w.pts[0])) <= 0) continue;
+    if (floorPoly(ctx, proj, w.pts)) { ctx.fillStyle = colors.wall; ctx.fill(); ctx.strokeStyle = colors.wallLine; ctx.lineWidth = lw; ctx.stroke(); }
+    for (const d of w.decals || []) if (floorPoly(ctx, proj, d.pts)) { ctx.fillStyle = MAT[d.m][0]; ctx.fill(); if (d.label && !scene.phoneView) labels.push({ p: d.at, text: L(d.label), tone: 'sage' }); }
+  }
+  // floor
+  const F = R.floor;
+  if (floorPoly(ctx, proj, [[F[0], 0, F[2]], [F[1], 0, F[2]], [F[1], 0, F[3]], [F[0], 0, F[3]]])) { ctx.fillStyle = colors.floor; ctx.fill(); }
+  ctx.strokeStyle = colors.grid; ctx.lineWidth = lw;
+  for (let x = Math.ceil(F[0]); x <= F[1]; x++) if (segment(ctx, proj, [x, .001, F[2]], [x, .001, F[3]])) ctx.stroke();
+  for (let z = Math.ceil(F[2]); z <= F[3]; z++) if (segment(ctx, proj, [F[0], .001, z], [F[1], .001, z])) ctx.stroke();
+  if (scene.phone && !scene.phoneView) {
+    ctx.fillStyle = colors.sage; ctx.globalAlpha = .13;
+    if (floorPoly(ctx, proj, footprint(scene.task.phone))) ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  for (const tp of R.tape || []) {
+    const f = facing(tp.yaw || 0), r = rightOf(f), c = tp.c, hw = (tp.w || .6) / 2;
+    const pts = [add(add(c, sc(r, hw)), sc(f, .025)), add(sub(c, sc(r, hw)), sc(f, .025)), sub(sub(c, sc(r, hw)), sc(f, .025)), sub(add(c, sc(r, hw)), sc(f, .025))].map(p => [p[0], .003, p[2]]);
+    if (floorPoly(ctx, proj, pts)) { ctx.fillStyle = MAT.tape[0]; ctx.fill(); }
+    if (tp.label && !scene.phoneView) labels.push({ p: add(c, sc(r, -hw - .25)), text: L(tp.label), tone: 'ink' });
+  }
+  if (scene.dims) for (const d of scene.dims) {
+    const a = [d.a[0], .004, d.a[2]], b = [d.b[0], .004, d.b[2]], n = sc(unit(cross(sub(b, a), UP)), .09);
+    ctx.strokeStyle = colors.sage; ctx.lineWidth = lw * 1.8; ctx.lineCap = 'round';
+    if (segment(ctx, proj, a, b)) ctx.stroke();
+    for (const e of [a, b]) if (segment(ctx, proj, add(e, n), sub(e, n))) ctx.stroke();
+    labels.push({ p: d.at || mix(a, b, .5), text: L(d.text), tone: 'sage' });
+  }
+  // the phone's view: where its picture's frame meets the test (lightly filled) and four thin rays
+  if (scene.phone && !scene.phoneView) {
+    const ph = scene.task.phone, cs = frustumCorners(ph);
+    ctx.fillStyle = colors.sage; ctx.globalAlpha = .07;
+    if (floorPoly(ctx, proj, cs)) ctx.fill();
+    ctx.globalAlpha = .5; ctx.strokeStyle = colors.sage; ctx.lineWidth = lw * 1.3;
+    if (floorPoly(ctx, proj, cs)) ctx.stroke();
+    ctx.globalAlpha = .35; ctx.lineWidth = lw; ctx.setLineDash([lw * 3, lw * 4]);
+    for (const c of cs) if (segment(ctx, proj, ph.pos, c)) ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    labels.push({ p: add(ph.pos, [0, .32, 0]), text: P('手机 · ', 'Phone · ', 'Teléfono · ') + t(ph.land ? 'landscape' : 'portrait'), tone: 'ink' });
+  }
+  // soft shadows
+  ctx.save();
+  if ('filter' in ctx) ctx.filter = `blur(${Math.round(lw * 4)}px)`;
+  for (const b of scene.bodies) {
+    if (b.alpha < .03) continue;
+    ctx.globalAlpha = b.alpha * (b.ghost ? .5 : 1); ctx.fillStyle = colors.shadow;
+    if (floorDisc(ctx, proj, b.J.pelvis, .2, .2)) ctx.fill();
+    for (const S of ['L', 'R']) if (b.J['ankle' + S][1] < .2 && floorDisc(ctx, proj, mix(b.J['heel' + S], b.J['toe' + S], .5), .1, .1)) ctx.fill();
+  }
+  ctx.restore();
+  // things and bodies
+  const main = scene.bodies.find(b => b.main && b.alpha >= .995) || null;
+  const items = roomPrims(scene.task, { phone: scene.phone && !scene.phoneView });
+  if (scene.roomOffset) items.push(...movedPrims(roomPrims(scene.task, {}), scene.roomOffset));
+  for (const b of scene.bodies) if (b.label && b.alpha > .05) labels.push({ p: [b.J.pelvis[0], 0, b.J.pelvis[2]], text: t(b.label), tone: b.pal === GOLD ? 'gold' : b.pal === GHOST ? 'ink' : 'sage' });
+  if (main) items.push(...bodyPrims(main.J, main.extra));
+  const others = scene.bodies.filter(b => b !== main && b.alpha >= .03);
+  const depth = b => dot(sub(b.J.pelvis, cam.pos), cam.f);
+  const behind = others.filter(b => !main || b.behind || depth(b) > depth(main)).sort((a, b) => depth(b) - depth(a));
+  const front = others.filter(b => main && !b.behind && depth(b) <= depth(main)).sort((a, b) => depth(b) - depth(a));
+  let li = 0;
+  const ghost = b => {
+    const [c, x] = layer(li++, W, H);
+    drawItems(x, bodyPrims(b.J, b.extra), proj, cam, lw, b.pal);
+    ctx.globalAlpha = b.alpha * (b.ghost ? .55 : 1); ctx.drawImage(c, 0, 0); ctx.globalAlpha = 1;
+  };
+  if (!main) { drawItems(ctx, items, proj, cam, lw, null); }
+  behind.forEach(ghost);
+  if (main) drawItems(ctx, items, proj, cam, lw, null);
+  front.forEach(ghost);
+  for (const l of scene.labels || []) labels.push(l);
+  drawLabels(ctx, proj, labels, lw);
+}
+
+function drawLabels(ctx, proj, labels, lw) {
+  ctx.font = `600 ${Math.round(12 * lw * Math.min(TS, 1.25))}px ${getComputedStyle(document.body).fontFamily}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const l of labels) {
+    const q = proj(l.p);
+    if (q.z < .1) continue;
+    const w = ctx.measureText(l.text).width + 16 * lw, h = 22 * lw;
+    q.x = clamp(q.x, Math.min(w / 2 + 4 * lw, ctx.canvas.width / 2), Math.max(ctx.canvas.width - w / 2 - 4 * lw, ctx.canvas.width / 2));
+    ctx.fillStyle = colors.paper; ctx.strokeStyle = colors.line; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(q.x - w / 2, q.y - h / 2, w, h, h / 2) : ctx.rect(q.x - w / 2, q.y - h / 2, w, h);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = l.tone === 'gold' ? colors.gold : l.tone === 'ink' ? colors.ink : colors.sage;
+    ctx.fillText(l.text, q.x, q.y + lw);
+  }
+}
+
+function frustumCorners(ph) {
+  const f = unit(sub(ph.aim, ph.pos)), r = unit(cross(f, UP)), u = cross(r, f);
+  const hv = (ph.land ? 42.3 : 69) * Math.PI / 360, hh = (ph.land ? 69 : 42.3) * Math.PI / 360, D = len(sub(ph.aim, ph.pos));
+  return [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(([a, b]) => add(ph.pos, sc(add(add(f, sc(r, a * Math.tan(hh))), sc(u, b * Math.tan(hv))), D)));
+}
+/** Where the phone's view meets the floor, up to just past the test. */
+function footprint(ph) {
+  const f = unit(sub(ph.aim, ph.pos)), r = unit(cross(f, UP)), u = cross(r, f);
+  const hv = Math.tan((ph.land ? 42.3 : 69) * Math.PI / 360), hh = Math.tan((ph.land ? 69 : 42.3) * Math.PI / 360);
+  const edge = [];
+  const N = 12;
+  for (let i = 0; i <= N; i++) edge.push([lerp(-1, 1, i / N), -1]);
+  for (let i = 0; i <= N; i++) edge.push([1, lerp(-1, 1, i / N)]);
+  for (let i = 0; i <= N; i++) edge.push([lerp(1, -1, i / N), 1]);
+  for (let i = 0; i <= N; i++) edge.push([-1, lerp(1, -1, i / N)]);
+  return edge.map(([a, b]) => {
+    const d = unit(add(add(f, sc(r, a * hh)), sc(u, b * hv)));
+    const far = len(sub(ph.aim, ph.pos)) * 1.08 / dot(d, f);
+    let k = d[1] < -1e-3 ? -ph.pos[1] / d[1] : far;
+    k = Math.min(k, far);
+    const p = add(ph.pos, sc(d, k));
+    return [p[0], .002, p[2]];
+  });
+}
+
+/* ============================================================= motion */
+/** Seated and standing positions for a chair. */
+function seatGeom(ch) {
+  const f = facing(ch.yaw), r = rightOf(f);
+  const hip = add(add(ch.pos, sc(f, -.2)), [0, SEAT_H + HIP_SEAT, 0]);
+  const g = add(ch.pos, sc(f, .2));
+  return { f, r, yaw: ch.yaw, hip, ground: g, ankL: add(add(g, sc(r, -.11)), [0, B.ankleH, 0]), ankR: add(add(g, sc(r, .11)), [0, B.ankleH, 0]),
+           stand: add([g[0], STAND_Y, g[2]], sc(f, -.03)) };
+}
+/** Along the sit-to-stand path: k = 0 seated, 1 standing. Forward first (over the feet), then up. */
+function stsAt(g, k) {
+  const zf = smooth(Math.min(1, k * 1.6)), yk = smooth(k);
+  return [lerp(g.hip[0], g.stand[0], zf), lerp(g.hip[1], g.stand[1], yk), lerp(g.hip[2], g.stand[2], zf)];
+}
+/** Rising (u 0→1 over the rise): lean forward first, then up; returns the standing-ness and the trunk lean. */
+function rising(u) {
+  const bump = u < .32 ? smooth(u / .32) : 1 - smooth((u - .32) / .68);
+  return { k: smooth((u - .22) / .78), lean: lerp(.1, .05, smooth(u)) + .5 * bump };
+}
+/** Sitting down (u 0→1): lean forward while lowering, back upright on the seat. */
+function sitting(u) {
+  const bump = u < .55 ? smooth(u / .55) : 1 - smooth((u - .55) / .45);
+  return { k: 1 - smooth(u / .88), lean: lerp(.05, .1, smooth(u)) + .42 * bump };
+}
+
+/** Feet planted except while they swing to their next placement (a smoothstep along the ground, a sine lift). */
+class Footsteps {
+  constructor(l, r, yaw) { this.start = { L: { p: l, yaw }, R: { p: r, yaw } }; this.at = { L: this.start.L, R: this.start.R }; this.steps = []; }
+  add(side, tl, td, p, yaw) { this.steps.push({ side, tl, td, from: this.at[side], to: { p, yaw } }); this.at[side] = { p, yaw }; }
+  foot(side, tt, lift = .06) {
+    let cur = this.start[side];
+    for (const s of this.steps) {
+      if (s.side !== side) continue;
+      if (tt < s.tl) return { p: cur.p, yaw: cur.yaw, pitch: 0 };
+      if (tt < s.td) {
+        const u = (tt - s.tl) / (s.td - s.tl), k = smooth(u);
+        const p = mix(s.from.p, s.to.p, k);
+        return { p: add(p, [0, lift * Math.sin(Math.PI * u), 0]), yaw: lerp(s.from.yaw, s.to.yaw, k), pitch: .25 * Math.sin(TAU * u) };
+      }
+      cur = s.to;
+    }
+    return { p: cur.p, yaw: cur.yaw, pitch: 0 };
+  }
+}
+const place = (g, yaw, side) => add(add(g, sc(rightOf(facing(yaw)), side === 'R' ? .1 : -.1)), [0, B.ankleH, 0]);
+/** Arms swing against the legs: an arm goes forward when the other leg's foot is ahead of the pelvis. */
+function swingArms(p, f, aL, aR, k = 1) {
+  const fw = a => clamp(dot(sub(a, p), f) / .32, -1, 1);
+  return { L: { flex: .32 * fw(aR) * k, abd: .07, elbow: .22 + .1 * Math.max(0, fw(aR)) * k }, R: { flex: .32 * fw(aL) * k, abd: .07, elbow: .22 + .1 * Math.max(0, fw(aL)) * k } };
+}
+
+/* ------------------------------------------------------- Timed Up and Go */
+function tugPlan(turnZ, o = {}) {
+  const ch = { pos: [0, 0, 0], yaw: 0, arms: true }, g = seatGeom(ch);
+  const go = 1, riseS = 1.3, speed = o.speed || .8, T = o.stepT || .6;
+  const tUp = go + riseS, z0 = g.ground[2];
+  const tTurn0 = tUp + (turnZ - z0) / speed, turnS = o.turnS || 1.8, tTurn1 = tTurn0 + turnS;
+  const tBack1 = tTurn1 + (turnZ - z0) / speed, tSit0 = tBack1 + 1.5, sitS = 1.4, tSeated = tSit0 + sitS;
+  const feet = new Footsteps(g.ankL, g.ankR, 0), turning = [];
+  let side = 'R';
+  const walk = (t0, t1, gz0, dir, yaw) => {
+    const dist = turnZ - z0, n = Math.max(2, Math.round(dist / (speed * T))), dt = (t1 - t0) / n, sl = dist / n;
+    for (let k = 1; k <= n; k++) {
+      const land = t0 + k * dt, gz = gz0 + dir * (sl * k + (k < n ? .5 * sl : 0));
+      feet.add(side, land - .78 * dt, land, place([0, 0, gz], yaw, side), yaw); side = side === 'R' ? 'L' : 'R';
+    }
+  };
+  const turn = (t0, t1, gz, h0, h1, n) => {
+    const d = (t1 - t0) / n, sw = Math.min(.8 * d, .5);
+    for (let k = 1; k <= n; k++) {
+      const land = t0 + k * d, ha = lerp(h0, h1, (k - 1) / n), hb = lerp(h0, h1, k / n);
+      feet.add(side, land - sw, land, place([0, 0, gz], hb, side), hb); turning.push([land - sw, land, ha, hb]); side = side === 'R' ? 'L' : 'R';
+    }
+  };
+  walk(tUp, tTurn0, z0, 1, 0);
+  turn(tTurn0, tTurn1, turnZ, 0, Math.PI, o.turnSteps || 4);
+  walk(tTurn1, tBack1, turnZ, -1, Math.PI);
+  turn(tBack1, tSit0 - .35, z0, Math.PI, TAU, 3);
+  feet.add(side, tSit0 - .35, tSit0, side === 'R' ? g.ankR : g.ankL, TAU);
+  const heading = tt => { let h = 0; for (const [a, c, h0, h1] of turning) { if (tt < a) break; if (tt < c) return lerp(h0, h1, smooth((tt - a) / (c - a))); h = h1; } return h; };
+  const seatedArms = J0 => ({ L: { hand: add(add(g.hip, sc(g.r, -.26)), [0, .19, .2]) }, R: { hand: add(add(g.hip, sc(g.r, .26)), [0, .19, .2]) } });
+  return {
+    go, end: tSeated, chair: ch, tUp, tTurn0, tTurn1, tBack1, tSit0,
+    pose(tt) {
+      const fl = feet.foot('L', tt), fr = feet.foot('R', tt);
+      const ankles = { L: fl.p, R: fr.p }, fts = { L: { yaw: fl.yaw, pitch: fl.pitch }, R: { yaw: fr.yaw, pitch: fr.pitch } };
+      if (tt < tUp) {
+        const u = clamp((tt - go) / riseS, 0, 1), st = rising(u);
+        const arms = seatedArms();
+        const k = smooth((u - .45) / .4);
+        const a = k > 0 ? { L: { blend: [arms.L, ARM_HANG], k }, R: { blend: [arms.R, ARM_HANG], k } } : arms;
+        return { p: stsAt(g, st.k), yaw: 0, lean: st.lean, ankles, feet: fts, arms: a };
+      }
+      if (tt >= tSit0) {
+        const u = clamp((tt - tSit0) / sitS, 0, 1), st = sitting(u), arms = seatedArms();
+        const k = 1 - smooth((u - .35) / .5);
+        return { p: stsAt(g, st.k), yaw: 0, lean: st.lean, ankles, feet: fts, arms: { L: { blend: [arms.L, ARM_HANG], k }, R: { blend: [arms.R, ARM_HANG], k } } };
+      }
+      let gz;
+      if (tt < tTurn0) gz = z0 + speed * (tt - tUp);
+      else if (tt < tTurn1) gz = turnZ;
+      else if (tt < tBack1) gz = turnZ - speed * (tt - tTurn1);
+      else gz = z0;
+      const h = heading(tt), f = facing(h), ph = (tt - tUp) / T * Math.PI;
+      const p = [.012 * Math.sin(ph), STAND_Y - .012 + .01 * Math.cos(2 * ph), gz - .03 * Math.cos(h)];
+      return { p, yaw: h, lean: .07, ankles, feet: fts, arms: swingArms(p, f, ankles.L, ankles.R), head: { pitch: .08 } };
+    },
+  };
+}
+
+/* ------------------------------------------------------ chair stands */
+function chairStandPlan(o) {
+  const ch = { pos: [0, 0, 0], yaw: 0, arms: false }, g = seatGeom(ch), go = 1;
+  const { reps, upS, downS, hold, stopAt, half, pushing, shallow, hover } = o;
+  const cyc = upS + downS + 2 * hold;
+  return {
+    go, chair: ch,
+    phase(tt) {
+      // 0 seated … 1 standing, with the count of full stands so far
+      const s = tt - go;
+      if (s < 0) return { k: 0, lean: .1, n: 0, up: false };
+      let i = Math.floor(s / cyc), u = s - i * cyc;
+      if (stopAt !== undefined && s >= stopAt) {        // after Stop: finish standing, then sit and rest
+        i = Math.floor(stopAt / cyc); u = stopAt - i * cyc;
+        const after = s - stopAt, rest = stopAt - i * cyc;
+        let k, lean;
+        if (rest < upS + hold) {                       // was rising at Stop: completes the stand
+          const ru = clamp(rest / upS + after / upS, 0, 1);
+          if (ru < 1) { const st = rising(ru); k = st.k; lean = st.lean; }
+          else { const su = clamp((after - (upS - rest)) / downS, 0, 1), st = sitting(su); k = st.k; lean = st.lean; }
+        } else { const su = clamp((rest - upS - hold) / downS + after / downS, 0, 1), st = sitting(su); k = st.k; lean = st.lean; }
+        return { k, lean, n: Math.min(reps, i) + (half && rest < upS && rising(rest / upS).k > .5 ? 1 : 0), up: false, stopped: true };
+      }
+      if (i >= reps) { const st = sitting(clamp((s - reps * cyc + downS + hold) / downS, 1, 1)); return { k: 0, lean: .1, n: reps, up: false }; }
+      if (u < upS) { const st = rising(u / upS); return { k: st.k, lean: st.lean, n: i, up: true }; }
+      if (u < upS + hold) return { k: 1, lean: .05, n: i + 1, up: true };
+      if (u < upS + hold + downS) { const st = sitting((u - upS - hold) / downS); return { k: st.k, lean: st.lean, n: i + 1, up: false }; }
+      return { k: 0, lean: .1, n: i + 1, up: false };
+    },
+    pose(tt) {
+      const ph = this.phase(tt);
+      let k = ph.k;
+      if (shallow) k = Math.min(k, .8) * (1 / .8) * .8;         // never quite straight
+      if (hover) k = .1 + k * .9;                              // never quite back on the seat
+      const p = stsAt(g, k);
+      const arms = pushing ? { L: { thigh: true }, R: { thigh: true } } : { L: { cross: true }, R: { cross: true } };
+      return { p, yaw: 0, lean: ph.lean + (pushing ? .12 * Math.sin(Math.PI * k) : 0), ankles: { L: g.ankL, R: g.ankR }, arms, head: { pitch: .05 } };
+    },
+  };
+}
+
+/* ------------------------------------------------------------ 4 m walk */
+function walkPlan(o) {
+  const go = 1, vmax = .95, T = .6, startZ = -.17, acc = .7, dec = 1.1;
+  // pelvis z(t): accelerate, cruise, decelerate to a stop at stopZ (numerically integrated)
+  const stopZ = o.stopZ, slowFrom = o.slowFrom;
+  const dt = .01, Z = [], Vv = [];
+  let z = startZ, v = 0;
+  for (let i = 0; i < 1400; i++) {
+    const tt = i * dt;
+    let target = tt < go ? 0 : vmax * smooth((tt - go) / acc);
+    const remain = stopZ - z;
+    const brake = slowFrom !== undefined ? Math.max(0, (z - slowFrom) / (stopZ - slowFrom)) : (remain < .8 ? 1 - remain / .8 : 0);
+    target *= 1 - smooth(brake);
+    if (remain < .02) target = 0;
+    v += (target - v) * Math.min(1, dt / .18);
+    z += v * dt; Z.push(z); Vv.push(v);
+  }
+  const zAt = tt => { const i = clamp(Math.floor(tt / dt), 0, Z.length - 2), k = tt / dt - i; return lerp(Z[i], Z[i + 1], clamp(k, 0, 1)); };
+  const vAt = tt => Vv[clamp(Math.round(tt / dt), 0, Vv.length - 1)];
+  const feet = new Footsteps(place([0, 0, startZ], 0, 'L'), place([0, 0, startZ], 0, 'R'), 0);
+  let side = 'R', tl = go + .15;
+  while (tl < 12) {
+    const land = tl + .78 * T, v = vAt(land);
+    if (v < .06) { // a last, closing step beside the other foot
+      feet.add(side, tl, tl + .5, place([0, 0, zAt(land)], 0, side), 0); break;
+    }
+    feet.add(side, tl, land, place([0, 0, zAt(land) + .5 * v * T], 0, side), 0);
+    side = side === 'R' ? 'L' : 'R'; tl += T;
+  }
+  // the timer stops when the first toe passes the 4 m line
+  let cross = null;
+  for (let tt = go; tt < 12 && cross === null; tt += .01) for (const S of ['L', 'R']) if (feet.foot(S, tt).p[2] + B.toe > 4) { cross = tt; break; }
+  return {
+    go, cross,
+    pose(tt) {
+      const fl = feet.foot('L', tt), fr = feet.foot('R', tt), ankles = { L: fl.p, R: fr.p };
+      const ph = (tt - go) / T * Math.PI, v = vAt(tt), k = clamp(v / .4, 0, 1);
+      const p = [.012 * Math.sin(ph) * k, STAND_Y - .012 * k + .01 * Math.cos(2 * ph) * k, zAt(tt) - .02];
+      return { p, yaw: 0, lean: .04 + .04 * k, ankles, feet: { L: { pitch: fl.pitch }, R: { pitch: fr.pitch } }, arms: swingArms(p, [0, 0, 1], ankles.L, ankles.R, k), head: { pitch: .06 } };
+    },
+  };
+}
+
+/* ------------------------------------------------------ standing balance */
+// Feet in metres: [to the person's left, forward]. One-foot stances name the foot that is lifted.
+const STANCES = [
+  { id: 'sbs', L: [.055, 0], R: [-.055, 0], sway: .004, arms: 0 },
+  { id: 'semi', L: [.045, -.06], R: [-.045, .06], sway: .007, arms: .1 },
+  { id: 'tandem', L: [.006, -.115], R: [-.006, .115], sway: .014, arms: .32 },
+  { id: 'onR', L: [.06, -.1], R: [-.05, 0], lift: 'L', sway: .02, arms: .45 },     // standing on the right foot (first, as in the app)
+  { id: 'onL', L: [.05, 0], R: [-.06, -.1], lift: 'R', sway: .02, arms: .45 },     // standing on the left foot
+];
+function balancePlan(o) {
+  const go = 1, trans = 1.4, hold = 4.4, per = trans + hold, last = STANCES.length - 1;
+  const stance = tt => {
+    const s = tt - go;
+    if (s < 0) return { i: 0, u: 1, h: -1 };
+    const i = Math.min(last, Math.floor(s / per)), w = s - i * per;
+    return { i, u: clamp(w / trans, 0, 1), h: w - trans };
+  };
+  const footAt = (st, S) => { const q = st[S]; return [q[0], B.ankleH, q[1]]; };   // the person faces +z, so their left is +x
+  const liftAt = S => S === 'R' ? [-.07, .32, -.13] : [.07, .32, -.13];
+  const ground = (st, S) => st.lift === S ? liftAt(S) : footAt(st, S);
+  const support = st => st.lift === 'R' ? 1 : st.lift === 'L' ? 0 : .5;          // the share of weight on the left foot
+  return {
+    go, per, trans, hold, stance, count: STANCES.length,
+    pose(tt) {
+      const s = stance(tt), cur = STANCES[s.i], prev = STANCES[Math.max(0, s.i - 1)];
+      // a change of stance: first a foot that was up comes down (or the foot that will stand settles; with both feet down,
+      // the left), then the other foot steps or lifts
+      const kA = s.i > 0 ? smooth(s.u / .5) : 1, kB = s.i > 0 ? smooth((s.u - .5) / .5) : 1;
+      const ankles = {};
+      for (const S of ['L', 'R']) {
+        const from = ground(prev, S), to = ground(cur, S);
+        const k = prev.lift === S ? kA : cur.lift === S ? kB : cur.lift ? kA : S === 'L' ? kA : kB;
+        let a = mix(from, to, k);
+        const moving = s.i > 0 && k > 0 && k < 1 && prev.lift !== S && cur.lift !== S && len(sub(from, to)) > .02;
+        if (moving) a = add(a, [0, .05 * Math.sin(Math.PI * k), 0]);
+        ankles[S] = a;
+      }
+      let bad = null;
+      if (o.mistake && s.i === 2 && s.h > 1.8) {          // tandem: steps out to the side and grabs the counter
+        const m = smooth((s.h - 1.8) / .5);
+        ankles.R = add(mix(footAt(cur, 'R'), [-.22, B.ankleH, .05], m), [0, .05 * Math.sin(Math.PI * m), 0]);
+        bad = m;
+      }
+      // the pelvis moves over the standing foot
+      const wPrev = support(prev), wMid = prev.lift ? .5 : wPrev, wl = s.i > 0 ? lerp(lerp(wPrev, wMid, kA), support(cur), kB) : support(cur);
+      const plantL = footAt(cur.lift === 'L' ? prev : cur, 'L'), plantR = footAt(cur.lift === 'R' ? prev : cur, 'R');
+      const base = mix(plantR, plantL, wl);
+      const amp = cur.sway * (s.h > 0 ? 1 : .4), tt2 = tt * 1.1;
+      const lean = (wl - .5) * .04;                       // a little extra shift over a single foot
+      const p = [base[0] + lean + amp * wob(tt2, 1.3), STAND_Y, base[2] + amp * .7 * wob(tt2, 4.1)];
+      const ab = cur.arms + .06 * wob(tt * 1.7, 2);
+      const arms = { L: { flex: .1, abd: .1 + ab, elbow: .35 }, R: { flex: .1, abd: .1 + ab, elbow: .35 } };
+      if (bad !== null) arms.R = { blend: [arms.R, { hand: [-.62, .92, .05] }], k: bad };
+      return { p, yaw: 0, lean: .03, roll: amp * 1.6 * wob(tt2, 7), ankles, arms, head: { pitch: .04 } };
+    },
+  };
+}
+
+/* ------------------------------------------------------------- seated */
+function seated(g, extra) {
+  return Object.assign({ p: g.hip, yaw: g.yaw, lean: .08, ankles: { L: g.ankL, R: g.ankR }, arms: { L: { thigh: true }, R: { thigh: true } }, head: { pitch: .02 } }, extra || {});
+}
+
+/** Arm curl: the right arm curls the weight; the forearm turns palm-up on the way (the weight's bar turns with it). */
+function curlPlan(o) {
+  const ch = { pos: [0, 0, 0], yaw: 0, arms: false }, g = seatGeom(ch), go = 1;
+  const upS = .8, top = .08, downS = .8, cyc = 1.963, reps = 16;
+  const curl = tt => {
+    const s = tt - go;
+    if (s < 0 || s > 30 + .9) return s > 30 && s < 30 + .9 ? null : 0;
+    const u = s % cyc;
+    if (Math.floor(s / cyc) >= reps) return 0;
+    if (u < upS) return smooth(u / upS);
+    if (u < upS + top) return 1;
+    if (u < upS + top + downS) return 1 - smooth((u - upS - top) / downS);
+    return 0;
+  };
+  const amount = tt => {
+    const s = tt - go;
+    if (s > 30 && s < 30 + 2.2) {                      // after the 30 s: the 16th curl goes up and comes down
+      const u = s - 15 * cyc;
+      if (u < upS) return smooth(u / upS);
+      if (u < upS + top) return 1;
+      return 1 - smooth(clamp((u - upS - top) / downS, 0, 1));
+    }
+    const c = curl(tt); return c === null ? 0 : c;
+  };
+  const count = tt => {
+    const s = tt - go;
+    if (s < 0) return 0;
+    const full = Math.min(15, Math.floor((Math.min(s, 30) + cyc - upS) / cyc));
+    return s >= 30 ? 16 : full;
+  };
+  return {
+    go, count, amount,
+    pose(tt) {
+      const w = amount(tt);
+      const elbow = o.partial ? lerp(.55, 1.95, w) : lerp(.05, 2.45, w);
+      const flex = o.swing ? lerp(.05, .7, w) : .04;
+      const sup = w;
+      return seated(g, {
+        lean: .04,
+        arms: { L: { thigh: true }, R: { flex, abd: .06, elbow } },
+        curl: sup,
+      });
+    },
+  };
+}
+function dumbbell(J, P, cap, ball, supination) {
+  const hand = J.handR, axis = unit(mix(J.tf, J.tr, supination));
+  const a = add(hand, sc(axis, -.075)), b = add(hand, sc(axis, .075));
+  P.push({ k: 'cap', a, b, ra: .014, rb: .014, c: 'metal' });
+  P.push({ k: 'ball', a, r: .042, c: 'metal' });
+  P.push({ k: 'ball', a: b, r: .042, c: 'metal' });
+}
+
+/** 2-minute step: marching in place, right knee first; a lift counts when the knee reaches the wall tape. */
+function stepPlan(o) {
+  const go = 1, P = .62, n = 18, low = o.allLow ? null : 4;   // the 5th right lift stays low
+  const lift = tt => {
+    const s = tt - go;
+    if (s < 0 || s >= n * P) return { R: 0, L: 0, i: -1 };
+    const i = Math.floor(s / P), u = (s - i * P) / P, w = u < .45 ? smooth(u / .45) : u < .9 ? 1 - smooth((u - .45) / .45) : 0;
+    const side = i % 2 === 0 ? 'R' : 'L', ri = Math.floor(i / 2);
+    const target = o.allLow || (side === 'R' && ri === low) ? .7 : 1.17;
+    return { R: side === 'R' ? w * target : 0, L: side === 'L' ? w * target : 0, i, side, ri, w, low: target < 1 };
+  };
+  const counted = tt => {
+    const s = tt - go; if (s < 0) return 0;
+    let c = 0;
+    for (let i = 0; i < n; i += 2) { if (s >= i * P + .45 * P && !(o.allLow || i / 2 === low)) c++; }
+    return c;
+  };
+  return {
+    go, P, n, lift, counted, low,
+    pose(tt) {
+      const l = lift(tt), p = [0, STAND_Y, 0], ankles = {}, feet = {};
+      for (const S of ['L', 'R']) {
+        const th = l[S], hipp = add(p, [S === 'R' ? -B.hipHalf : B.hipHalf, 0, 0]);
+        const knee = add(hipp, [0, -B.thigh * Math.cos(th), B.thigh * Math.sin(th)]);
+        let a = add(knee, [0, -B.shin, .02 * th]);
+        a[1] = Math.max(B.ankleH, a[1]);
+        ankles[S] = a; feet[S] = { pitch: -.35 * th };
+      }
+      const swing = (l.R - l.L) * .35;
+      return { p, yaw: 0, lean: .03, ankles, feet, arms: { L: { flex: swing, abd: .08, elbow: .5 }, R: { flex: -swing, abd: .08, elbow: .5 } }, head: { pitch: .03 } };
+    },
+  };
+}
+
+/** Chair sit-and-reach: on the front edge, the right leg straight (heel down, toes up), reaching along it. */
+function reachPlan(o) {
+  const ch = { pos: [0, 0, 0], yaw: 0, arms: false }, g0 = seatGeom(ch);
+  const hip = [0, SEAT_H + HIP_SEAT, -.05], hipR = [-B.hipHalf, hip[1], hip[2]];
+  const L0 = B.thigh + B.shin, drop = hip[1] - B.ankleH, run = Math.sqrt(L0 * L0 - drop * drop);
+  const legPitch = Math.atan2(drop, run);
+  const ankR0 = [hipR[0], B.ankleH, hip[2] + run * .999];
+  const footPitch = Math.PI / 2 - legPitch;
+  const ankL = [B.hipHalf + .02, B.ankleH, hip[2] + .4];
+  const toeOf = ank => add(ank, rot(add(sc([0, 0, 1], B.toe), sc(UP, -B.ankleH * .5)), [-1, 0, 0], footPitch));
+  const trials = [{ t0: 2, reach: -.04 }, { t0: 10.5, reach: .02 }];
+  const reachS = 2.5, holdS = 2, backS = 1.6;
+  const state = tt => {
+    for (const tr of trials) {
+      const s = tt - tr.t0;
+      if (s >= -1 && s < reachS + holdS + backS) {
+        if (s < 0) return { w: 0, hands: smooth(s + 1), reach: tr.reach };
+        if (s < reachS) return { w: smooth(s / reachS), hands: 1, reach: tr.reach };
+        if (s < reachS + holdS) return { w: 1, hands: 1, reach: tr.reach, hold: s - reachS };
+        return { w: 1 - smooth((s - reachS - holdS) / backS), hands: 1, reach: tr.reach };
+      }
+    }
+    return { w: 0, hands: 0, reach: 0 };
+  };
+  return {
+    go: 1, trials, reachS, holdS, toeOf, ankR0,
+    pose(tt) {
+      const st = state(tt);
+      const bend = o.bend ? smooth(clamp((st.w - .6) / .4, 0, 1)) : 0;
+      const ankR = add(ankR0, [0, 0, -.07 * bend]);
+      const toe = toeOf(ankR), knee0 = mix(hipR, ankR0, B.thigh / L0);
+      const goal = add(add(toe, [0, .03, (st.reach || 0) + .02 * bend]), [-B.hipHalf * .55, 0, 0]);
+      const rest = add(mix(hipR, knee0, .7), [.06, .1, 0]);
+      const target = mix(rest, goal, st.w);
+      // lean until the straight arms reach the target (bisection on the trunk lean)
+      const armLen = B.upper + B.fore + .04, reachLen = Math.sqrt(armLen * armLen - B.shHalf * B.shHalf) * .985;
+      let lo = 0, hi = 1.45;
+      for (let i = 0; i < 30; i++) {
+        const m = (lo + hi) / 2, up = [0, Math.cos(m), Math.sin(m)], neck = add(hip, sc(up, B.torso - B.shDrop));
+        if (len(sub(target, neck)) > reachLen) lo = m; else hi = m;
+      }
+      const lean = st.w > .02 ? hi : .1;
+      const hands = st.hands;
+      const tipL = add(target, [.008, .02, 0]), tipR = target;
+      const arms = hands > 0 ? { L: { blend: [{ thigh: true }, { hand: sub(tipL, [0, 0, .055]), pole: [.3, -1, -.2] }], k: hands }, R: { blend: [{ thigh: true }, { hand: sub(tipR, [0, 0, .055]), pole: [-.3, -1, -.2] }], k: hands } } : { L: { thigh: true }, R: { thigh: true } };
+      return { p: hip, yaw: 0, lean: Math.min(lean, st.w > .02 ? lean : .1), ankles: { L: ankL, R: ankR }, feet: { R: { pitch: footPitch } }, arms, head: { pitch: -.15 * st.w } , st, toe };
+    },
+  };
+}
+
+/** Tremor: seated facing the phone, hands at rest on the thighs, then held out in front. */
+function tremorPlan() {
+  const ch = { pos: [0, 0, 0], yaw: 0, arms: false }, g = seatGeom(ch);
+  return {
+    go: 1,
+    pose(tt) {
+      const raise = smooth((tt - 7.2) / 1) * (1 - smooth((tt - 14.2) / 1));
+      const jit = S => [.006 * Math.sin(TAU * 5.2 * tt + (S === 'L' ? 0 : 1.3)), .007 * Math.sin(TAU * 5.2 * tt + (S === 'L' ? .6 : 2)), 0];
+      const out = { flex: 1.5, abd: .05, elbow: .05 };
+      const arms = {};
+      for (const S of ['L', 'R']) arms[S] = raise > 0 ? { blend: [{ thigh: true }, out], k: raise } : { thigh: true, jitter: jit(S) };
+      if (raise >= .999) for (const S of ['L', 'R']) arms[S] = Object.assign({}, out, { jitter: jit(S) });
+      return seated(g, { lean: .03, arms });
+    },
+  };
+}
+
+/** Turn in place: 180° to the right, a pause, then back to the left. Each foot landing is a step; the last two
+    landings square the feet up. `enBloc`: many small shuffling steps, head and trunk turning together. */
+function turnPlan(o) {
+  const go = 1, pause = 1.6;
+  const a0 = go, a1 = go + o.dur1, b0 = a1 + pause, b1 = b0 + o.dur2;
+  const g = [0, 0, 0], feet = new Footsteps(place(g, 0, 'L'), place(g, 0, 'R'), 0), turns = [], lands = [[], []];
+  const turn = (t0, t1, h0, h1, n, first, li) => {
+    const d = (t1 - t0) / n, sw = Math.min(.85 * d, .5);
+    let side = first;
+    for (let k = 1; k <= n; k++) {
+      const land = t0 + k * d, ha = lerp(h0, h1, Math.min(1, (k - 1) / (n - 1))), hb = lerp(h0, h1, Math.min(1, k / (n - 1)));
+      feet.add(side, land - sw, land, place(g, hb, side), hb);
+      turns.push([land - sw, land, ha, hb]); lands[li].push(land);
+      side = side === 'R' ? 'L' : 'R';
+    }
+  };
+  turn(a0, a1, 0, -Math.PI, o.n1, 'R', 0);         // turning right (as the app asks first): the right foot opens first
+  turn(b0, b1, -Math.PI, 0, o.n2, 'L', 1);         // and back to the left
+  const heading = tt => { let h = 0; for (const [a, c, h0, h1] of turns) { if (tt < a) break; if (tt < c) return lerp(h0, h1, smooth((tt - a) / (c - a))); h = h1; } return h; };
+  const lift = o.lift || .06;
+  return {
+    go, a0, a1, b0, b1, n1: o.n1, n2: o.n2,
+    steps: (tt, i) => lands[i].filter(x => x <= tt).length,
+    pose(tt) {
+      const fl = feet.foot('L', tt, lift), fr = feet.foot('R', tt, lift), h = heading(tt);
+      const dh = heading(tt + .18) - h, moving = Math.abs(dh) > 1e-3;
+      const headLead = o.enBloc ? 0 : clamp(dh * 2.4, -.35, .35);
+      const arms = o.enBloc ? { L: { flex: .15, abd: .3, elbow: .55 }, R: { flex: .15, abd: .3, elbow: .55 } } : { L: { flex: .04, abd: .12, elbow: .22 }, R: { flex: .04, abd: .12, elbow: .22 } };
+      const p = [.008 * wob(tt * 1.2, 3), STAND_Y - (moving ? .012 : 0) - (o.enBloc ? .015 : 0), .008 * wob(tt * 1.2, 5)];
+      return { p, yaw: h, lean: o.enBloc ? .12 : .04, ankles: { L: fl.p, R: fr.p }, feet: { L: { yaw: fl.yaw, pitch: fl.pitch }, R: { yaw: fr.yaw, pitch: fr.pitch } },
+               arms, head: { pitch: o.enBloc ? .12 : .06, yaw: headLead } };
+    },
+  };
+}
+
+/** Back scratch (Senior Fitness Test): standing, the right hand reaches down the middle of the back from over the
+    shoulder, the left hand up from the waist; the score is the distance between the middle fingertips (gap minus). */
+function scratchPlan(o) {
+  const trials = [{ t0: 1.4, gap: -.08 }, { t0: 8.4, gap: -.06 }];
+  const reachS = 2.2, holdS = 2.4, backS = 1.6, finger = .075;
+  const state = tt => {
+    for (let i = 0; i < trials.length; i++) {
+      const tr = trials[i], s = tt - tr.t0;
+      if (s >= 0 && s < reachS + holdS + backS) {
+        const w = s < reachS ? smooth(s / reachS) : s < reachS + holdS ? 1 : 1 - smooth((s - reachS - holdS) / backS);
+        return { w, gap: tr.gap, trial: i, hold: s >= reachS && s < reachS + holdS ? s - reachS : undefined };
+      }
+    }
+    return { w: 0, gap: 0, trial: tt < trials[1].t0 ? 0 : 1 };
+  };
+  const neckY = STAND_Y + B.torso, backZ = -.2;
+  return {
+    trials, reachS, holdS, finger, state,
+    pose(tt) {
+      const st = state(tt), off = o.bad ? 1 : 0;
+      // hand centres sit ~5.5 cm past the wrist along the forearm: aim the wrists so the hands meet on the spine and the
+      // drawn fingertips (centre ± 7.5 cm finger + 1.1 cm tip) are the trial's gap apart (the lower forearm slopes down ~3.5 cm)
+      const topY = neckY - .2, botY = topY - (2 * (finger + .011) + Math.abs(st.gap || 0)) + .037;
+      const top = { hand: [-.11 * off, topY + .055, backZ], pole: [-.5, 1, -.1] };
+      const bot = { hand: [.05 + .1 * off, botY, backZ], pole: [1, -.4, -.6] };
+      const arms = st.w > 0 ? { R: { blend: [ARM_HANG, top], k: st.w }, L: { blend: [ARM_HANG, bot], k: st.w } } : { L: ARM_HANG, R: ARM_HANG };
+      return { p: [0, STAND_Y, 0], yaw: 0, lean: o.bad ? -.13 * st.w : .02, ankles: { L: [.1, B.ankleH, 0], R: [-.1, B.ankleH, 0] }, arms,
+               head: { pitch: o.bad ? -.1 * st.w : .04 }, fingers: smooth((st.w - .6) / .4), st };
+    },
+  };
+}
+function scratchFingers(J, P, cap, ball, k) {
+  if (k <= 0) return;
+  cap(J.handR, add(J.handR, [0, -.075 * k, 0]), .014, .011, 'skin');
+  cap(J.handL, add(J.handL, [0, .075 * k, 0]), .014, .011, 'skin');
+}
+
+/* ============================================================ the tests */
+const T3 = (zh, en, es) => ({ zh, en, es });
+/** Before any physical test (the app's safety questions): any answer that isn't true means no physical test today. */
+const BASE_GATE = [
+  T3('今天没有胸痛、头晕、气短，也没有让人走不了、站不了的疼痛', 'No chest pain, dizziness or breathlessness today, and no pain that stops walking or standing', 'Hoy sin dolor en el pecho, mareo ni falta de aire, y sin dolor que impida caminar o estar de pie'),
+  T3('过去 2 周没有摔倒或受伤；过去 3 个月腿、髋、背没做过手术', 'No fall or injury in the past 2 weeks; no leg, hip or back surgery in the past 3 months', 'Sin caídas ni lesiones en las últimas 2 semanas; sin cirugía de piernas, caderas o espalda en los últimos 3 meses'),
+  T3('不用别人扶，自己能从椅子上站起来', 'Can get up from a chair without someone’s help', 'Puede levantarse de una silla sin ayuda de otra persona'),
+];
+const wallBehind = (z, w = 2.4, h = 1.6) => ({ pts: [[-w / 2, 0, z], [w / 2, 0, z], [w / 2, h, z], [-w / 2, h, z]], n: [0, 0, 1] });
+
+const TASKS = [];
+(() => {
+  /* ---- TUG */
+  const tug = tugPlan(3.05), tugBad = tugPlan(2.3);
+  TASKS.push({
+    id: 'tug', cmp: 'overlay', name: T3('计时起立行走测试', 'Timed Up and Go', 'Levántate y anda cronometrado'), dur: tug.end + 1.8,
+    shows: T3('站起来、走 3 米、转身、走回、坐下：一项测试看日常活动和平衡。', 'Stand up, walk 3 m, turn, walk back and sit down: everyday mobility and balance in one test.', 'Levantarse, caminar 3 m, girar, volver y sentarse: la movilidad y el equilibrio cotidianos en una sola prueba.'),
+    room: { chair: tug.chair, cone: [0, 0, 3.3], tape: [{ c: [0, 0, 3], w: .9, label: T3('3 米线', '3 m line', 'línea de 3 m') }], floor: [-4.2, 4.4, -1.2, 4.6], walls: [wallBehind(-.62, 2.6)] },
+    phone: { pos: [3.6, 1.0, 1.4], aim: [0, .75, 1.4], land: true, h: T3('腰的高度（约 1 米）', 'waist height (about 1 m)', 'a la altura de la cintura (alrededor de 1 m)'), d: T3('走道侧面 3–4 米', '3–4 m to the side of the path', 'a 3–4 m al lado del recorrido') },
+    view: { move: [1.05, .32, 7.2, [0, .75, 1.5]], setup: [.55, .78, 9.5, [1, .5, 1.4]], points: [1.05, .32, 7.2, [0, .75, 1.5]] },
+    sideAz: Math.PI / 2,
+    dims: [{ a: [-.55, 0, 0], b: [-.55, 0, 3], text: T3('3 米', '3 m', '3 m'), at: [-.75, 0, 1.5] }, { a: [3.6, 0, 1.4], b: [.4, 0, 1.4], text: T3('3–4 米', '3–4 m', '3–4 m'), at: [2.1, 0, 1.75] }],
+    labels: [{ p: [.75, SEAT_H, -.3], text: T3('有扶手，座高约 46 cm', 'armrests, seat ~46 cm', 'con reposabrazos, asiento de ~46 cm'), tone: 'ink' }],
+    scene: [{ x: 0, z: -.4, y: .9 }, { x: 0, z: 3.1, y: 0 }, { x: .4, z: 3, y: 0 }, { x: -.4, z: 3, y: 0 }], sceneWhat: T3('椅子和 3 米线', 'The chair and the 3 m line', 'la silla y la línea de 3 m'),
+    steps: [
+      { t: 0, s: T3('背靠椅背坐好，双手放在扶手上', 'Sit back in the chair, arms on the armrests', 'Siéntese con la espalda apoyada y los brazos en los reposabrazos') },
+      { t: tug.go, s: T3('听到“开始”，站起来', 'At “Go”, stand up', 'Al oír «Ya», levántese'), cue: 'go' },
+      { t: tug.go + 1.3, s: T3('用平常的速度走到 3 米线', 'Walk at your usual pace to the 3 m line', 'Camine a su paso habitual hasta la línea de 3 m') },
+      { t: tug.go + 1.3 + (3.05 - .2) / .8, s: T3('过线后转身', 'Turn around past the line', 'Dé la vuelta pasada la línea') },
+      { t: tug.go + 1.3 + (3.05 - .2) / .8 + 1.8, s: T3('走回椅子', 'Walk back to the chair', 'Vuelva caminando a la silla') },
+      { t: tug.end - 2.9, s: T3('转身坐下，背靠椅背：停表', 'Turn, sit down, back against the chair: stop the timer', 'Gire y siéntese con la espalda apoyada: pare el cronómetro'), small: T3('从“开始”到坐好的时间', 'Timed from “Go” until seated', 'Desde «Ya» hasta quedar sentado') },
+    ],
+    pose: tug.pose, bad: tugBad.pose,
+    chip(tt) { const s = clamp(tt - tug.go, 0, tug.end - tug.go); return tt < tug.go ? t('timer', { s: num(0) }) : t('timer', { s: num(s) }); },
+    cueStop: tug.end,
+    helper: tt => { const p = tug.pose(tt).p; return { at: [-.62, 0, clamp(p[2] + .05, .1, 3)], facePerson: Math.abs(tug.pose(tt + .2).p[2] - p[2]) < .01 }; },
+    need: [T3('有扶手的结实椅子，座高约 46 cm，靠墙放', 'A sturdy chair with armrests, seat about 46 cm, against a wall', 'Una silla firme con reposabrazos, asiento de unos 46 cm, contra la pared'), T3('椅子前 3 米处地上贴一条线（或放一个标记）', 'A line (or a marker) on the floor 3 m in front of the chair', 'Una línea (o una marca) en el suelo a 3 m delante de la silla'), T3('平时穿的鞋；平时用助行器就带上', 'Usual shoes, and the usual walking aid', 'Calzado habitual y la ayuda para caminar de siempre')],
+    helperText: T3('站在老人身边、远离手机的一侧，随时能扶；不要走在前面挡住镜头。坐好、背靠椅背时点“停止”。', 'Stand beside the person on the side away from the phone, ready to help, and don’t walk in front of the camera. Tap Stop when their back is against the chair.', 'Quédese junto a la persona, del lado contrario al teléfono, listo para ayudar, y no camine delante de la cámara. Toque Parar cuando su espalda vuelva a apoyarse en la silla.'),
+    counts: [T3('从“开始”计时，到坐下、背靠椅背为止', 'From “Go” until sitting back against the chair', 'Desde «Ya» hasta sentarse con la espalda apoyada'), T3('用平常的速度走，不跑', 'Usual walking pace, no running', 'Paso habitual, sin correr'), T3('可以用手撑扶手站起；用平时的助行器', 'Pushing up from the armrests is allowed; use the usual walking aid', 'Se puede empujar con los reposabrazos para levantarse; use la ayuda para caminar de siempre')],
+    bads: [T3('没走到 3 米线就转身', 'Turning before reaching the 3 m line', 'Girar antes de llegar a la línea de 3 m'), T3('还没坐稳就停表', 'Stopping the timer before sitting back', 'Parar el cronómetro antes de que se siente del todo'), T3('帮手走在前面，挡住了画面', 'The helper walking in front, blocking the view', 'Quien ayuda camina delante y tapa la imagen')],
+    badCaption: T3('金色：没走到 3 米线就转身，路程变短，时间偏快。', 'Gold: turning before the 3 m line, so the walk is shorter and the time too fast.', 'En dorado: gira antes de la línea de 3 m, así que el recorrido es más corto y el tiempo, demasiado rápido.'),
+    safe: [T3('地面干燥、没有地毯边和杂物', 'A dry floor, no rug edges or clutter', 'Suelo seco, sin bordes de alfombra ni objetos'), T3('头晕、胸痛、气短或疼痛就马上停', 'Stop at once for dizziness, chest pain, breathlessness or pain', 'Pare de inmediato si hay mareo, dolor en el pecho, falta de aire o dolor')],
+    src: 'CDC STEADI · WS/T 887—2026 · ≥ 12 s: higher falls risk (STEADI)',
+  });
+
+  /* ---- dual-task TUG: the same walk while naming animals */
+  const dual = tugPlan(3.05, { speed: .66, turnS: 2.3, turnSteps: 5, stepT: .64 });
+  const tSingle = tug.end - tug.go, tDual = dual.end - dual.go, cost = Math.round((tDual / tSingle - 1) * 100);
+  const WORDS = { zh: ['猫', '狗', '马', '牛', '羊', '狗', '兔子', '老虎'], en: ['cat', 'dog', 'horse', 'cow', 'sheep', 'dog', 'rabbit', 'tiger'],
+                  es: ['gato', 'perro', 'caballo', 'vaca', 'oveja', 'perro', 'conejo', 'tigre'] };
+  const REPEAT = 5, wordT = [.5, 2.2, 3.9, 5.2, 8.4, 10.1, 11.8, 13.5].map(x => dual.go + x);
+  const named = tt => { const n = wordT.filter(x => x <= Math.min(tt, dual.end)).length; return n - (n > REPEAT ? 1 : 0); };
+  TASKS.push({
+    id: 'tugDual', cmp: 'overlay', name: T3('边走边说动物名的 TUG', 'TUG while naming animals', 'TUG nombrando animales'), dur: dual.end + 2.4,
+    shows: T3('同一段起立行走，边走边说动物的名字：看一边想、一边走时慢了多少。', 'The same TUG while naming animals: how much slower walking gets while thinking.', 'El mismo TUG nombrando animales: cuánto se enlentece la marcha mientras se piensa.'),
+    tags: [T3('只记录给医生，不打分', 'Recorded for the doctor, not scored', 'Se registra para el médico, no se puntúa')],
+    room: { chair: dual.chair, cone: [0, 0, 3.3], tape: [{ c: [0, 0, 3], w: .9, label: T3('3 米线', '3 m line', 'línea de 3 m') }], floor: [-4.2, 4.4, -1.2, 4.6], walls: [wallBehind(-.62, 2.6)] },
+    phone: { pos: [3.6, 1.0, 1.4], aim: [0, .75, 1.4], land: true, h: T3('腰的高度（约 1 米）', 'waist height (about 1 m)', 'a la altura de la cintura (alrededor de 1 m)'), d: T3('走道侧面 3–4 米', '3–4 m to the side of the path', 'a 3–4 m al lado del recorrido') },
+    view: { move: [1.05, .32, 7.2, [0, .75, 1.5]], setup: [.55, .78, 9.5, [1, .5, 1.4]], points: [1.05, .32, 7.2, [0, .75, 1.5]] },
+    sideAz: Math.PI / 2,
+    dims: [{ a: [-.55, 0, 0], b: [-.55, 0, 3], text: T3('3 米', '3 m', '3 m'), at: [-.75, 0, 1.5] }, { a: [3.6, 0, 1.4], b: [.4, 0, 1.4], text: T3('3–4 米', '3–4 m', '3–4 m'), at: [2.1, 0, 1.75] }],
+    labels: [{ p: [.75, SEAT_H, -.3], text: T3('同一把椅子、同一条线', 'same chair, same line', 'misma silla, misma línea'), tone: 'ink' }],
+    scene: [{ x: 0, z: -.4, y: .9 }, { x: 0, z: 3.1, y: 0 }, { x: .4, z: 3, y: 0 }, { x: -.4, z: 3, y: 0 }], sceneWhat: T3('椅子和 3 米线', 'The chair and the 3 m line', 'la silla y la línea de 3 m'),
+    steps: [
+      { t: 0, s: T3('先做一次普通的起立行走，再做这一项', 'First an ordinary TUG, then this one', 'Primero un TUG normal y después este'), small: T3(`演示：普通的用了 ${fmt(tSingle, 1, 'zh')} 秒`, `Demo: the ordinary one took ${fmt(tSingle, 1, 'en')} s`, `Demostración: el normal tardó ${fmt(tSingle, 1, 'es')} s`) },
+      { t: .45, s: T3('App 会说明：边走边大声说出尽量多的不同动物', 'The app explains: name out loud as many different animals as you can while walking', 'La app lo explica: diga en voz alta tantos animales distintos como pueda mientras camina'), small: T3('帮手不提示、不催促', 'The helper gives no hints and doesn’t hurry', 'Quien ayuda no da pistas ni mete prisa') },
+      { t: dual.go, s: T3('听到“开始”：站起来，边走边说', 'At “Go”: stand up and walk, naming animals', 'Al oír «Ya»: levántese y camine nombrando animales'), cue: 'go' },
+      { t: dual.tTurn0 - .3, s: T3('过 3 米线转身，继续说', 'Turn past the 3 m line and keep naming', 'Gire pasada la línea de 3 m y siga nombrando') },
+      { t: dual.tBack1, s: T3('走回、坐下、背靠椅背：停表', 'Walk back and sit down, back against the chair: stop the timer', 'Vuelva y siéntese con la espalda apoyada: pare el cronómetro') },
+      { t: dual.end + .2, s: T3('记下用时，和说了几种动物（重复的不算）', 'Note the time and how many different animals (repeats don’t count)', 'Anote el tiempo y cuántos animales distintos dijo (los repetidos no cuentan)'),
+        small: T3(`演示：${fmt(tDual, 1, 'zh')} 秒，${named(dual.end)} 种；比普通的慢 ${cost}%`, `Demo: ${fmt(tDual, 1, 'en')} s, ${named(dual.end)} animals; ${cost}% slower than the ordinary one`,
+                  `Demostración: ${fmt(tDual, 1, 'es')} s, ${named(dual.end)} animales; un ${cost} % más lento que el normal`) },
+    ],
+    pose: dual.pose, bad: tug.pose,
+    cmpKeys: [T3('只走不说', 'Walking only', 'Solo caminar'), T3('边走边说', 'Walking and naming', 'Caminar y nombrar')],
+    chip(tt) { const s = clamp(tt - dual.go, 0, tDual); return t('timer', { s: num(tt < dual.go ? 0 : s) }) + P(` · 说出 ${named(tt)} 种`, ` · ${named(tt)} animals`, ` · ${named(tt)} animales`); },
+    note: tt => P(`普通 ${num(tSingle)} 秒`, `Ordinary ${num(tSingle)} s`, `Normal ${num(tSingle)} s`) + (tt >= dual.end ? P(` · 慢了 ${cost}%`, ` · ${cost}% slower`, ` · ${cost} % más lento`) : ''),
+    bubble(tt, J) {
+      if (tt >= dual.end) return null;
+      for (let i = wordT.length - 1; i >= 0; i--) if (tt >= wordT[i]) {
+        if (tt > wordT[i] + 1.2) return null;
+        const w = WORDS[lang][i], q = P(`“${w}”`, `“${w}”`, `«${w}»`);
+        return { p: add(J.head, [0, .34, 0]), text: q + (i === REPEAT ? P(' 重复，不算', ' repeat, not counted', ' repetido, no cuenta') : '') };
+      }
+      return null;
+    },
+    cueStop: dual.end,
+    helper: tt => { const p = dual.pose(tt).p; return { at: [-.62, 0, clamp(p[2] + .05, .1, 3)], facePerson: Math.abs(dual.pose(tt + .2).p[2] - p[2]) < .01 }; },
+    need: [T3('和普通起立行走一样：有扶手的椅子、3 米线', 'As for the ordinary TUG: a chair with armrests and a 3 m line', 'Como en el TUG normal: una silla con reposabrazos y una línea a 3 m'), T3('同一天、同一把椅子，先做普通的那一次', 'The ordinary TUG first, same day, same chair', 'Primero el TUG normal, el mismo día y con la misma silla')],
+    gate: [T3('今天普通的起立行走不超过 15 秒，走得稳', 'Today’s ordinary TUG took 15 s or less and looked steady', 'El TUG normal de hoy duró 15 s o menos y se vio estable'), T3('平时走路不用助行器', 'No walking aid needed day to day', 'No usa ayuda para caminar en el día a día')],
+    helperText: T3('走在老人身边、离手机远的一侧，一臂之内。不要提示；边听边数说了几种不同的动物：录像没有声音，事后数不了。', 'Walk alongside, on the side away from the phone, within arm’s reach. Don’t suggest names; count the different animals as you listen: the video has no sound, so they can’t be counted afterwards.', 'Camine al lado, del lado contrario al teléfono, al alcance del brazo. No sugiera nombres; cuente los animales distintos mientras escucha: el video no tiene sonido, así que no se pueden contar después.'),
+    counts: [T3('计时方法和普通起立行走完全一样', 'Timed exactly like the ordinary TUG', 'Se cronometra igual que el TUG normal'), T3('说了几种不同的动物；重复的不算', 'Count the different animals; repeats don’t count', 'Cuente los animales distintos; los repetidos no cuentan'), T3('结果记成“比普通的慢了多少（%）”，给医生参考；App 不打分', 'Recorded as “how much slower than the ordinary TUG (%)”, for the doctor; the app gives no score', 'Se registra como «cuánto más lento que el TUG normal (%)», para el médico; la app no da puntuación')],
+    bads: [T3('帮手替他想、提示动物名', 'The helper suggesting animals', 'Quien ayuda sugiere animales'), T3('开始前先背好一串名字', 'Rehearsing a list before starting', 'Preparar una lista antes de empezar'), T3('为了多说几个而走得比平时快', 'Walking faster than usual to fit more names in', 'Caminar más rápido de lo habitual para decir más nombres')],
+    badCaption: T3(`灰色：同一个人只走不说，${fmt(tSingle, 1, 'zh')} 秒。边走边说用了 ${fmt(tDual, 1, 'zh')} 秒，慢了约 ${cost}%。这个差值就是要记下的“双任务代价”，不是做错了。`,
+                   `Grey: the same person walking only, ${fmt(tSingle, 1, 'en')} s. Naming animals as well took ${fmt(tDual, 1, 'en')} s, about ${cost}% slower. That difference, the “dual-task cost”, is what gets recorded; it isn’t a mistake.`,
+                   `En gris: la misma persona solo caminando, ${fmt(tSingle, 1, 'es')} s. Nombrando animales tardó ${fmt(tDual, 1, 'es')} s, alrededor de un ${cost} % más. Esa diferencia, el «costo de la doble tarea», es lo que se registra; no es un error.`),
+    safe: [T3('想不出来就不说了，专心走路；随时可以停', 'If no name comes, stop naming and just walk; stopping is always fine', 'Si no se le ocurre ninguno, deje de nombrar y solo camine; siempre se puede parar'), T3('头晕、胸痛、气短或疼痛就马上停', 'Stop at once for dizziness, chest pain, breathlessness or pain', 'Pare de inmediato si hay mareo, dolor en el pecho, falta de aire o dolor')],
+    src: 'Shumway-Cook 2000 (TUG with a cognitive task) · Åhman 2020 (naming animals)',
+  });
+
+  /* ---- 5 chair stands */
+  const c5 = chairStandPlan({ reps: 5, upS: 1, downS: 1, hold: .075 });
+  const c5bad = chairStandPlan({ reps: 5, upS: .9, downS: .9, hold: .05, pushing: true, shallow: true });
+  const c5ph = { pos: [1.75, .6, 1.85], aim: [0, .7, .05], h: T3('膝到髋的高度（约 60 cm）', 'knee to hip height (about 60 cm)', 'entre la rodilla y la cadera (unos 60 cm)'), d: T3('2–3 米，在椅子斜前方约 45°', '2–3 m away, about 45° to the front of the chair', 'a 2–3 m, unos 45° respecto al frente de la silla') };
+  const fifth = c5.go + 4 * 2.15 + 1;
+  TASKS.push({
+    id: 'chair5', name: T3('5 次起坐', 'Five chair stands', 'Cinco levantadas de la silla'), dur: fifth + 2.8,
+    shows: T3('腿的力量和爆发力：腿把身体抬起 5 次要多快。', 'Leg strength and power: how quickly the legs lift the body five times.', 'Fuerza y potencia de las piernas: con qué rapidez levantan el cuerpo cinco veces.'),
+    room: { chair: c5.chair, floor: [-1.6, 2.4, -1, 2.4], walls: [wallBehind(-.62)] },
+    phone: c5ph, view: { move: [.75, .2, 4.5, [0, .62, .05]], setup: [.45, .62, 5.8, [.6, .5, .6]], points: [1.25, .16, 4.5, [0, .62, .05]] }, sideAz: Math.PI / 2,
+    dims: [{ a: [0, 0, .1], b: [1.75, 0, 1.85], text: T3('2–3 米 · 约 45°', '2–3 m · about 45°', '2–3 m · unos 45°') }],
+    labels: [{ p: [.42, SEAT_H, -.2], text: T3('无扶手，座高 43–46 cm', 'no armrests, seat 43–46 cm', 'sin reposabrazos, asiento de 43–46 cm'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('坐在椅子中间，双臂交叉放在胸前', 'Sit in the middle of the chair, arms crossed over the chest', 'Siéntese en el centro de la silla, con los brazos cruzados sobre el pecho') },
+      { t: c5.go, s: T3('听到“开始”，尽快站直再坐下', 'At “Go”, stand up straight and sit down, as quickly as you safely can', 'Al oír «Ya», póngase de pie recto y siéntese, tan rápido como pueda con seguridad'), cue: 'go' },
+      { t: c5.go + 2.15, s: T3('连做 5 次，每次都站直、坐到椅面', 'Five times without stopping, standing straight and sitting right down each time', 'Cinco veces sin parar, poniéndose recto y sentándose del todo cada vez') },
+      { t: fifth - .5, s: T3('第 5 次站直的那一刻：停表', 'Standing straight the fifth time: stop the timer', 'Recto por quinta vez: pare el cronómetro'), small: T3('从“开始”到第 5 次站直', 'Timed from “Go” to the fifth full stand', 'Desde «Ya» hasta la quinta levantada completa') },
+      { t: fifth + .3, s: T3('坐下休息', 'Sit down and rest', 'Siéntese y descanse') },
+    ],
+    pose: c5.pose.bind(c5), bad: c5bad.pose.bind(c5bad),
+    chip(tt) { const ph = c5.phase(tt); return tt < c5.go ? t('timer', { s: num(0) }) : t('timer', { s: num(clamp(tt - c5.go, 0, fifth - c5.go)) }) + ' · ' + t('count', { n: Math.max(1, Math.min(5, ph.n + (ph.up && ph.n < 5 ? 1 : 0))) }); },
+    cueStop: fifth,
+    helper: () => ({ at: [-.62, 0, .1], facePerson: true }),
+    need: [T3('无扶手、有靠背的直背椅，座高 43–46 cm，靠墙放稳', 'A straight-backed chair without armrests, seat 43–46 cm, steady against a wall', 'Una silla de respaldo recto sin reposabrazos, asiento de 43–46 cm, firme contra la pared')],
+    helperText: T3('站在老人身边。第 5 次完全站直时点“停止”。', 'Stand next to the person. Tap Stop the moment they stand up straight the fifth time.', 'Quédese junto a la persona. Toque Parar en el momento en que se ponga recta por quinta vez.'),
+    counts: [T3('每次都要完全站直：髋和膝都伸直', 'Each stand fully upright: hips and knees straight', 'Cada levantada del todo recto: caderas y rodillas estiradas'), T3('每次都要坐回椅面', 'Sit right back down each time', 'Sentarse del todo cada vez'), T3('双臂一直交叉在胸前', 'Arms stay crossed over the chest', 'Los brazos siguen cruzados sobre el pecho')],
+    bads: [T3('用手撑大腿或椅子站起来', 'Pushing up with the hands on the thighs or the chair', 'Empujar con las manos en los muslos o en la silla'), T3('没站直就坐下', 'Sitting down before standing straight', 'Sentarse antes de ponerse recto')],
+    badCaption: T3('金色：手撑大腿、没站直。这样的结果不能和标准比较。', 'Gold: hands pushing on the thighs and not standing straight. Such a result can’t be compared with the standards.', 'En dorado: las manos empujan en los muslos y no se pone recto. Un resultado así no se puede comparar con los estándares.'),
+    safe: [T3('椅子靠墙，不会滑动', 'The chair against a wall so it can’t slide', 'La silla contra la pared para que no resbale'), T3('头晕、胸痛、气短或疼痛就马上停', 'Stop at once for dizziness, chest pain, breathlessness or pain', 'Pare de inmediato si hay mareo, dolor en el pecho, falta de aire o dolor')],
+    src: 'SPPB · AWGS 2019 (≥ 12 s: low strength) · WHO ICOPE (> 14 s)',
+  });
+
+  /* ---- 30 s chair stand */
+  const c30 = chairStandPlan({ reps: 13, upS: 1.15, downS: 1.15, hold: .065, stopAt: 30, half: true });
+  const c30bad = chairStandPlan({ reps: 13, upS: 1.15, downS: 1.15, hold: .065, stopAt: 30, hover: true });
+  TASKS.push({
+    id: 'chair30', name: T3('30 秒起坐', '30-second chair stand', 'Levantarse de la silla en 30 segundos'), dur: c30.go + 30 + 3.4,
+    shows: T3('腿的力量和耐力：30 秒内能完全站起几次。', 'Leg strength and endurance: how many full stands in 30 seconds.', 'Fuerza y resistencia de las piernas: cuántas veces se levanta del todo en 30 segundos.'),
+    room: { chair: c30.chair, floor: [-1.6, 2.4, -1, 2.4], walls: [wallBehind(-.62)] },
+    phone: c5ph, view: { move: [.75, .2, 4.5, [0, .62, .05]], setup: [.45, .62, 5.8, [.6, .5, .6]], points: [1.25, .16, 4.5, [0, .62, .05]] }, sideAz: Math.PI / 2,
+    dims: [{ a: [0, 0, .1], b: [1.75, 0, 1.85], text: T3('2–3 米 · 约 45°', '2–3 m · about 45°', '2–3 m · unos 45°') }],
+    labels: [{ p: [.42, SEAT_H, -.2], text: T3('无扶手，座高约 43 cm', 'no armrests, seat ~43 cm', 'sin reposabrazos, asiento de ~43 cm'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('坐在椅子中间，双手腕交叉贴在胸前，双脚平放', 'Sit in the middle, wrists crossed against the chest, feet flat', 'Siéntese en el centro, con las muñecas cruzadas contra el pecho y los pies apoyados') },
+      { t: c30.go, s: T3('听到“开始”，完全站起再坐下，越多越好', 'At “Go”, stand up fully and sit down, as many times as you can', 'Al oír «Ya», levántese del todo y siéntese, tantas veces como pueda'), cue: 'go' },
+      { t: c30.go + 3, s: T3('每次都站直、坐稳；帮手大声数', 'Stand straight and sit right down each time; the helper counts aloud', 'Póngase recto y siéntese del todo cada vez; quien ayuda cuenta en voz alta') },
+      { t: c30.go + 30, s: T3('30 秒到“停”：已经站起一半以上的这次也算', 'At “Stop” after 30 s: a stand more than halfway up counts', 'Al oír «Pare» a los 30 s: si está más de medio camino arriba, esa cuenta'), cue: 'stop' },
+      { t: c30.go + 31.3, s: T3('坐下休息', 'Sit down and rest', 'Siéntese y descanse') },
+    ],
+    pose: c30.pose.bind(c30), bad: c30bad.pose.bind(c30bad),
+    chip(tt) { const ph = c30.phase(tt), s = clamp(30 - (tt - c30.go), 0, 30); return (tt < c30.go ? t('left', { s: '30' }) : t('left', { s: num(s, 0) })) + ' · ' + t('done', { n: ph.n }); },
+    helper: () => ({ at: [-.62, 0, .1], facePerson: true }),
+    need: [T3('无扶手的直背椅，座高约 43 cm，靠墙放稳', 'A straight-backed chair without armrests, seat about 43 cm, against a wall', 'Una silla de respaldo recto sin reposabrazos, asiento de unos 43 cm, contra la pared')],
+    helperText: T3('站在身边，每完全站起一次就大声数一次。App 会说“开始”和 30 秒后的“停”。', 'Stand alongside and count each full stand aloud. The app says “Go” and, 30 seconds later, “Stop”.', 'Quédese al lado y cuente en voz alta cada levantada completa. La app dice «Ya» y, 30 segundos después, «Pare».'),
+    counts: [T3('完全站直才算一次', 'Only a full stand counts', 'Solo cuenta una levantada completa'), T3('“停”时站起超过一半，也算一次', 'A stand more than halfway up at “Stop” counts', 'Cuenta si al oír «Pare» está más de medio camino arriba'), T3('用了手撑：结果保留，但不和标准表比较', 'If the arms were needed, the result is kept but not compared with the table', 'Si hicieron falta los brazos, el resultado se guarda pero no se compara con la tabla')],
+    bads: [T3('没坐稳就又站起来（只是“点”一下椅面）', 'Rising again before sitting down (just touching the seat)', 'Volver a levantarse sin sentarse (solo rozar el asiento)'), T3('用手撑膝盖', 'Pushing on the knees', 'Empujar en las rodillas')],
+    badCaption: T3('金色：每次都没坐到椅面上，这些次数不能算。', 'Gold: never sitting back down on the seat, so these stands don’t count.', 'En dorado: nunca llega a sentarse en el asiento, así que estas levantadas no cuentan.'),
+    safe: [T3('累了可以停，不必做满 30 秒', 'Stop when tired; there’s no need to finish the 30 s', 'Pare si se cansa; no hace falta completar los 30 s'), T3('头晕、胸痛、气短或疼痛就马上停', 'Stop at once for dizziness, chest pain, breathlessness or pain', 'Pare de inmediato si hay mareo, dolor en el pecho, falta de aire o dolor')],
+    src: 'CDC STEADI (below the age-and-sex average: higher falls risk)',
+  });
+
+  /* ---- 4 m walk */
+  const wk = walkPlan({ stopZ: 5.4 }), wkBad = walkPlan({ stopZ: 4.05, slowFrom: 2.9 });
+  TASKS.push({
+    id: 'walk4m', cmp: 'overlay', name: T3('4 米步行', '4-metre walk', 'Marcha de 4 metros'), dur: 10.5,
+    shows: T3('平常走路的速度：最能反映老人整体状况的单项指标之一。', 'Usual walking speed: one of the strongest single signs of how an older person is doing.', 'La velocidad de marcha habitual: uno de los mejores indicadores de cómo se encuentra una persona mayor.'),
+    room: { floor: [-4.4, 1.6, -1.2, 6.2], tape: [{ c: [0, 0, 0], w: .9, label: T3('起点 0 米', 'start 0 m', 'salida 0 m') }, { c: [0, 0, 4], w: .9, label: T3('4 米', '4 m', '4 m') }] },
+    phone: { pos: [-3.6, 1.0, 2.0], aim: [0, .75, 2.0], land: true, h: T3('腰的高度（约 1 米）', 'waist height (about 1 m)', 'a la altura de la cintura (alrededor de 1 m)'), d: T3('路线侧面 3–4 米，对着 4 米段的中间', '3–4 m to the side, level with the middle of the 4 m', 'a 3–4 m al lado, a la altura de la mitad de los 4 m') },
+    view: { move: [-1.2, .26, 6.6, [0, .65, 2.4]], setup: [-.6, .8, 10, [-1.2, .5, 2.2]], points: [-1.2, .26, 6.6, [0, .65, 2.4]] }, sideAz: -Math.PI / 2,
+    dims: [{ a: [.55, 0, 0], b: [.55, 0, 4], text: T3('4 米（计时段）', '4 m (timed)', '4 m (cronometrados)'), at: [.8, 0, 2] }, { a: [.55, 0, 4], b: [.55, 0, 5.8], text: T3('继续走', 'keep going', 'siga caminando'), at: [.85, 0, 5] }, { a: [-3.6, 0, 2], b: [-.4, 0, 2], text: T3('3–4 米', '3–4 m', '3–4 m'), at: [-2, 0, 2.35] }],
+    scene: [{ x: 0, z: 0, y: 0 }, { x: 0, z: 4, y: 0 }], sceneWhat: T3('起点线和 4 米线', 'The start and 4 m lines', 'la salida y la línea de 4 m'),
+    steps: [
+      { t: 0, s: T3('脚尖碰着起点线站好', 'Stand with the toes touching the start line', 'Póngase con las puntas de los pies tocando la línea de salida') },
+      { t: wk.go, s: T3('听到“开始”，用平常的速度走，像在街上走', 'At “Go”, walk at your usual pace, as on the street', 'Al oír «Ya», camine a su paso habitual, como por la calle'), cue: 'go' },
+      { t: wk.go + 2.2, s: T3('走到 4 米线也不要减速，继续往前走', 'Don’t slow down for the 4 m line: keep going past it', 'No frene al llegar a la línea de 4 m: siga más allá') },
+      { t: wk.cross - .25, s: T3('第一只脚越过 4 米线：停表', 'The first foot passes the 4 m line: stop the timer', 'El primer pie cruza la línea de 4 m: pare el cronómetro'), small: T3('从“开始”到越过 4 米线', 'Timed from “Go” until a foot passes 4 m', 'Desde «Ya» hasta que un pie cruza los 4 m') },
+      { t: wk.cross + 1.6, s: T3('走两次，取较快的一次', 'Walk twice; the faster one counts', 'Camine dos veces; cuenta la más rápida') },
+    ],
+    pose: wk.pose, bad: wkBad.pose, frameWindow: [0, wk.cross + .25],
+    chip(tt) { return t('timer', { s: num(clamp(tt - wk.go, 0, wk.cross - wk.go)) }); },
+    cueStop: wk.cross,
+    helper: tt => { const p = wk.pose(tt).p; return { at: [.45, 0, Math.max(-.6, p[2] - .7)], facePerson: false }; },
+    need: [T3('至少 6 米长的平整通道', 'A clear, level path at least 6 m long', 'Un recorrido despejado y llano de al menos 6 m'), T3('在 0 米和 4 米处地上贴胶带', 'Tape on the floor at 0 m and at 4 m', 'Cinta en el suelo a 0 m y a 4 m'), T3('平时的鞋和助行器', 'Usual shoes and walking aid', 'Calzado y ayuda para caminar habituales')],
+    helperText: T3('在老人身后稍远处跟着走，不要挡住镜头。第一只脚越过 4 米线时点“停止”。', 'Walk a little behind, out of the camera’s way. Tap Stop when the first foot passes the 4 m line.', 'Camine un poco por detrás, fuera del campo de la cámara. Toque Parar cuando el primer pie cruce la línea de 4 m.'),
+    counts: [T3('平常的步速，不是最快', 'The usual pace, not the fastest', 'El paso habitual, no el más rápido'), T3('从静止开始，走过 4 米线后才慢下来', 'Start from standing; slow down only after the 4 m line', 'Salir desde parado; frenar solo después de la línea de 4 m'), T3('走两次，取较快的一次', 'Two walks; the faster one counts', 'Dos marchas; cuenta la más rápida')],
+    bads: [T3('看到 4 米线就提前减速', 'Slowing down before the 4 m line', 'Frenar antes de la línea de 4 m'), T3('边走边说话', 'Talking while walking', 'Hablar mientras camina')],
+    badCaption: T3('金色：快到 4 米线就慢下来，测得的速度偏慢。', 'Gold: slowing for the 4 m line, so the speed comes out too slow.', 'En dorado: frena al llegar a la línea de 4 m, así que la velocidad sale demasiado lenta.'),
+    safe: [T3('通道没有地毯边和门槛', 'No rug edges or thresholds on the path', 'Sin bordes de alfombra ni umbrales en el recorrido'), T3('需要时有人在旁边', 'Someone close by if needed', 'Alguien cerca si hace falta')],
+    src: 'WS/T 887—2026 · SPPB · WFG 2022 (< 0.8 m/s, i.e. > 5 s for 4 m: needs a closer look)',
+  });
+
+  /* ---- standing balance */
+  const bl = balancePlan({}), blBad = balancePlan({ mistake: true });
+  const stanceName = [T3('双脚并拢', 'Feet side by side', 'Pies juntos, uno al lado del otro'), T3('半前后脚', 'Half step (semi-tandem)', 'Medio paso (semitándem)'), T3('前后脚（脚跟顶脚尖）', 'Heel to toe (tandem)', 'Talón con punta (tándem)'), T3('右脚单脚站', 'Stand on the right foot', 'Sobre el pie derecho'), T3('左脚单脚站', 'Stand on the left foot', 'Sobre el pie izquierdo')];
+  TASKS.push({
+    id: 'balance', sideDist: 1.95, name: T3('站立平衡', 'Standing balance', 'Equilibrio de pie'), dur: bl.go + bl.count * bl.per + 1,
+    shows: T3('支撑面越来越小时的平衡：最多 5 个姿势，每个 10 秒，最后左右脚各单脚站一次。', 'Balance as the base of support gets smaller: up to five positions of ten seconds, ending with standing on each foot.', 'El equilibrio a medida que se reduce la base de apoyo: hasta cinco posiciones de diez segundos, terminando sobre cada pie.'),
+    room: { counter: { c: [-.95, .45, 0], size: [.55, .9, 1.2] }, floor: [-1.8, 1.8, -1.2, 3], walls: [wallBehind(-.9, 3.2, 1.8)] },
+    phone: { pos: [0, .9, 2.6], aim: [0, .82, 0], h: T3('髋的高度（约 90 cm）', 'hip height (about 90 cm)', 'a la altura de la cadera (unos 90 cm)'), d: T3('正前方 2–3 米', '2–3 m in front', 'a 2–3 m de frente') },
+    view: { move: [.45, .18, 4.4, [0, .8, 0]], setup: [.75, .62, 5.8, [0, .5, 1]], points: [.25, .16, 4.4, [0, .8, 0]] }, sideAz: Math.PI / 2,
+    dims: [{ a: [0, 0, .3], b: [0, 0, 2.6], text: T3('2–3 米', '2–3 m', '2–3 m'), at: [.35, 0, 1.5] }],
+    labels: [{ p: [-.95, .98, 0], text: T3('台面：不稳时可以扶', 'counter to hold if needed', 'encimera para agarrarse si hace falta'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('帮手扶着摆好姿势；放手后才开始计时', 'The helper helps the person into each position, lets go, then starts timing', 'Quien ayuda coloca a la persona en cada posición, la suelta y entonces empieza a cronometrar') },
+      ...stanceName.map((n, i) => ({ t: bl.go + i * bl.per, s: T3(n.zh + ' 10 秒', n.en + ', 10 s', n.es + ', 10 s'), small: [null,
+        T3('前脚的脚背靠着后脚的大脚趾', 'The front foot’s instep touches the back foot’s big toe', 'El empeine del pie delantero toca el dedo gordo del pie de atrás'),
+        T3('一只脚放在另一只正前方，脚跟顶着脚尖', 'One foot directly in front of the other, heel touching toe', 'Un pie justo delante del otro, el talón tocando la punta'),
+        T3('前后脚站满 10 秒、旁边有人时才做', 'Only after holding heel-to-toe for 10 s, with someone standing by', 'Solo después de mantener talón con punta 10 s, con alguien al lado'),
+        T3('换另一只脚；两只脚分别记录', 'Then the other foot; each side is recorded', 'Después el otro pie; cada lado se registra')][i] })),
+    ],
+    pose: bl.pose, bad: blBad.pose,
+    chip(tt) { const s = bl.stance(tt); if (tt < bl.go) return L(stanceName[0]); return L(stanceName[s.i]) + ' · ' + (s.h > 0 ? t('left', { s: num(clamp(10 - s.h * 10 / bl.hold, 0, 10), 0) }) : '…'); },
+    note: () => t('fast'),
+    helper: tt => { const s = bl.stance(tt); return { at: [.55, 0, -.12], facePerson: true, reach: s.u < 1 && tt >= bl.go ? 1 - Math.abs(2 * s.u - 1) : 0 }; },
+    need: [T3('空地，旁边有台面或结实的桌子可以扶', 'A clear floor next to a counter or sturdy table', 'Un espacio despejado junto a una encimera o una mesa firme'), T3('不用助行器，睁着眼', 'No walking aid; eyes open', 'Sin ayuda para caminar; ojos abiertos')],
+    helperText: T3('站在身边，扶着进入每个姿势，放手后点“已站好：开始”。脚动了或扶了东西就点“失去平衡或脚动了”。',
+                   'Stand alongside, help into each position, let go and tap “In position: start”. Tap “Lost balance or moved feet” if the feet move or they hold on.',
+                   'Quédese al lado, ayude a ponerse en cada posición, suelte y toque «En posición: empezar». Toque «Perdió el equilibrio o movió los pies» si mueve los pies o se agarra.'),
+    counts: [T3('每个姿势 10 秒；可以动手臂和身体，脚不能动', 'Ten seconds per position; arms and body may move, the feet may not', 'Diez segundos por posición; los brazos y el cuerpo se pueden mover, los pies no'), T3('一个姿势没站住，测试就结束；只有单脚站左右脚都会试', 'A position not held ends the test, except that standing on one foot is tried on both feet', 'Si una posición no se mantiene, la prueba termina, salvo que estar sobre un pie se prueba con los dos pies'), T3('前后脚站不到 10 秒：跌倒风险较高（STEADI）', 'Not holding heel-to-toe for 10 s: higher falls risk (STEADI)', 'No mantener talón con punta 10 s: mayor riesgo de caídas (STEADI)'), T3('单脚站：左右脚分别记录，每只最多 10 秒', 'One foot: each side recorded separately, up to 10 s each', 'Sobre un pie: cada lado se registra por separado, hasta 10 s cada uno')],
+    bads: [T3('脚挪了一步还继续计时', 'Carrying on timing after a foot moved', 'Seguir cronometrando después de que un pie se movió'), T3('扶着台面还算“站住了”', 'Counting it as held while holding the counter', 'Darla por mantenida mientras se agarra a la encimera'), T3('抬起的脚靠在站着的腿上', 'Resting the raised foot against the standing leg', 'Apoyar el pie levantado en la pierna de apoyo')],
+    badCaption: T3('金色：前后脚时脚往旁边迈、手去扶台面——这个姿势到此结束。', 'Gold: in heel-to-toe the foot steps out and a hand grabs the counter, so this position ends here.', 'En dorado: en talón con punta el pie sale hacia un lado y una mano se agarra a la encimera, así que esta posición termina aquí.'),
+    gate: [T3('不用助行器能站稳；旁边有台面可以扶', 'Can stand without a walking aid, next to a counter to hold', 'Puede estar de pie sin ayuda para caminar, junto a una encimera donde agarrarse')],
+    safe: [T3('帮手始终在一臂之内', 'The helper stays within arm’s reach', 'Quien ayuda se queda siempre al alcance del brazo'), T3('前后脚站不满 10 秒，就不做单脚站', 'If heel-to-toe isn’t held for 10 s, skip standing on one foot', 'Si no mantiene talón con punta 10 s, no haga la posición sobre un pie'), T3('一个人做时，到前后脚就结束：单脚站要有人在旁边', 'On your own the test ends after heel-to-toe: standing on one foot needs someone standing by', 'Sin nadie al lado, la prueba termina tras talón con punta: estar sobre un pie requiere a alguien al lado'), T3('单脚站最多 10 秒，不往上加', 'One foot for 10 s at most; don’t push for longer', 'Sobre un pie, 10 s como máximo; no alargue más')],
+    src: 'CDC STEADI 4-Stage Balance Test · SPPB · one foot on each side: Araujo 2022',
+  });
+
+  /* ---- turn in place */
+  const tn = turnPlan({ n1: 4, dur1: 2.2, n2: 4, dur2: 2.3 }), tnRef = turnPlan({ n1: 8, dur1: 3.6, n2: 9, dur2: 3.9, enBloc: true, lift: .025 });
+  const turnLine = p => P(`右转 ${p.n1} 步 ${num(p.a1 - p.a0)} 秒 · 左转 ${p.n2} 步 ${num(p.b1 - p.b0)} 秒`,
+                         `Right ${p.n1} steps ${num(p.a1 - p.a0)} s · left ${p.n2} steps ${num(p.b1 - p.b0)} s`,
+                         `Derecha ${p.n1} pasos ${num(p.a1 - p.a0)} s · izquierda ${p.n2} pasos ${num(p.b1 - p.b0)} s`);
+  TASKS.push({
+    id: 'turn180', cmp: 'side', sideDist: 1.25, name: T3('原地转身', 'Turn on the spot', 'Girar en el sitio'), dur: tnRef.b1 + 1.6,
+    shows: T3('转身时的平衡：原地向后转 180°，左右各一次，记下用了几步、几秒。', 'Balance while turning: a 180° turn on the spot, each way, noting the steps and the seconds.', 'El equilibrio al girar: media vuelta (180°) en el sitio, hacia cada lado, anotando los pasos y los segundos.'),
+    tags: [T3('只记录给医生，不打分', 'Recorded for the doctor, not scored', 'Se registra para el médico, no se puntúa')],
+    room: { tape: [{ c: [0, 0, 0], w: .5 }, { c: [0, 0, 0], w: .5, yaw: Math.PI / 2 }], floor: [-1.6, 1.6, -1.5, 3], walls: [wallBehind(-1.4, 3.2, 1.8)] },
+    phone: { pos: [0, .9, 2.6], aim: [0, .8, 0], h: T3('髋的高度（约 90 cm）', 'hip height (about 90 cm)', 'a la altura de la cadera (unos 90 cm)'), d: T3('正前方 2–3 米', '2–3 m in front', 'a 2–3 m de frente') },
+    view: { move: [.5, .72, 5.4, [0, .5, 0]], setup: [.75, .62, 5.8, [0, .5, 1]], points: [.3, .42, 5, [0, .65, 0]] }, sideAz: Math.PI / 2,
+    dims: [{ a: [0, 0, .35], b: [0, 0, 2.6], text: T3('2–3 米', '2–3 m', '2–3 m'), at: [.35, 0, 1.5] }],
+    labels: [{ p: [.55, 0, -.45], text: T3('地上贴个十字，站在中间', 'tape cross: stand on the middle', 'cruz de cinta: póngase en el centro'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('双脚稍微分开，站在十字中间，手臂自然下垂', 'Stand on the cross with the feet a little apart, arms relaxed', 'Póngase sobre la cruz con los pies un poco separados y los brazos relajados') },
+      { t: tn.a0, s: T3('听到“开始”，用平常的速度向右转身，转到面向身后', 'At “Go”, turn to the right at your usual speed until facing the other way', 'Al oír «Ya», gire hacia la derecha a su ritmo habitual hasta mirar hacia el otro lado'), cue: 'go' },
+      { t: tn.a1, s: T3('站定后，帮手点“转好了”，记下用了几步', 'Standing still: the helper taps Turned and notes the steps', 'Ya quieto: quien ayuda toca «Girado» y anota los pasos'), small: T3('脚每落地一次算一步，最后并脚的那一步也算', 'Each time a foot lands is a step, the last one bringing the feet together included', 'Cada vez que un pie apoya es un paso, incluido el último que junta los pies') },
+      { t: tn.b0, s: T3('站稳后，再向左转回来', 'When steady, turn back to the left', 'Cuando esté estable, gire de vuelta hacia la izquierda') },
+      { t: tn.b1, s: T3('左右各记一次：几步、几秒', 'One record for each side: steps and seconds', 'Un registro por lado: pasos y segundos') },
+    ],
+    pose: tn.pose, bad: tnRef.pose,
+    cmpKeys: [T3('小碎步', 'Small steps', 'Pasos cortos'), T3('平常转身', 'Usual turn', 'Giro habitual')],
+    chip(tt) {
+      if (tt < tn.a0) return P('准备', 'Ready', 'Preparado');
+      const st = n => P(` ${n} 步`, ` ${n} step${n === 1 ? '' : 's'}`, ` ${n} paso${n === 1 ? '' : 's'}`);
+      if (tt < tn.a1 + .05) return P('向右转 ·', 'Turning right ·', 'Girando a la derecha ·') + st(tn.steps(tt, 0)) + ' · ' + t('timer', { s: num(tt - tn.a0) });
+      if (tt < tn.b0) return P('向右转：', 'Right turn:', 'Giro a la derecha:') + st(tn.n1) + P('，', ', ', ', ') + num(tn.a1 - tn.a0) + P(' 秒', ' s', ' s');
+      if (tt < tn.b1 + .05) return P('向左转回 ·', 'Turning back left ·', 'Volviendo a la izquierda ·') + st(tn.steps(tt, 1)) + ' · ' + t('timer', { s: num(tt - tn.b0) });
+      return turnLine(tn);
+    },
+    helper: () => ({ at: [.68, 0, .15], facePerson: true }),
+    need: [T3('一块平地，周围 1 米内没有家具和杂物', 'A level spot with nothing within 1 m', 'Un sitio llano sin nada a menos de 1 m'), T3('旁边有墙或台面，需要时可以扶', 'A wall or counter to hold if needed', 'Una pared o encimera donde apoyarse si hace falta'), T3('地上贴个小十字（可选），看得出脚有没有挪开', 'A small tape cross on the floor (optional), to show any drift', 'Una pequeña cruz de cinta en el suelo (opcional), para ver si se desplaza')],
+    gate: [T3('不扶东西能自己站稳', 'Can stand steady without holding on', 'Puede estar de pie estable sin agarrarse'), T3('过去一个月没有头晕或天旋地转的感觉', 'No dizziness or spinning feeling in the past month', 'Sin mareos ni sensación de que todo gira en el último mes')],
+    helperText: T3('站在身边一臂之内，但不要挡在转身经过的地方。App 说“开始”后，数每一步，包括最后并脚的那一步；面向身后、站定时点“转好了”。', 'Stand within arm’s reach but out of the way of the turn. After the app says “Go”, count every step, the last one bringing the feet together included, and tap Turned when they stand still facing the other way.', 'Quédese al alcance del brazo, pero fuera del camino del giro. Cuando la app diga «Ya», cuente cada paso, incluido el último que junta los pies, y toque «Girado» cuando la persona esté quieta mirando hacia el otro lado.'),
+    counts: [T3('从“开始”到面向身后、双脚站稳', 'From “Go” until facing the other way with both feet still', 'Desde «Ya» hasta mirar hacia el otro lado con los dos pies quietos'), T3('脚每落地一次算一步，最后并脚的那一步也算', 'Each time a foot lands counts as a step, the last one bringing the feet together included', 'Cada vez que un pie apoya cuenta como un paso, incluido el último que junta los pies'), T3('先向右、再向左各做一次，分别记录', 'First to the right, then back to the left, recorded separately', 'Primero hacia la derecha y luego de vuelta hacia la izquierda, cada uno por separado'), T3('只记录给医生，App 不打分', 'Recorded for the doctor; the app gives no score', 'Se registra para el médico; la app no da puntuación')],
+    bads: [T3('为了快而猛转', 'Spinning round fast to be quick', 'Girar deprisa para acabar antes'), T3('帮手站在转身要经过的地方', 'The helper standing in the way of the turn', 'Quien ayuda se pone en el camino del giro'), T3('还没站稳就停表', 'Stopping the timer before the feet are still', 'Parar el cronómetro antes de que los pies estén quietos')],
+    badCaption: T3('灰色：用了 8 小步、头和身体一起转。这不是做错了，而是要如实记下、给医生看的样子。', 'Grey: eight small steps, head and trunk turning as one. This isn’t a mistake; it’s what to record faithfully for the doctor.', 'En gris: ocho pasos cortos, la cabeza y el tronco giran en bloque. No es un error: es lo que hay que registrar tal cual para el médico.'),
+    safe: [T3('用平常的速度，不比快', 'Usual speed; it isn’t a race', 'A su ritmo habitual; no es una carrera'), T3('转完有点晕，先站稳或坐下，再做另一边', 'If dizzy after a turn, steady yourself or sit down before the other side', 'Si se marea tras un giro, estabilícese o siéntese antes de hacer el otro lado')],
+    src: 'TURN 180 (Gamerman 2019) · turning steps: STEADI TUG observations',
+  });
+
+  /* ---- tremor */
+  const tr = tremorPlan();
+  TASKS.push({
+    id: 'tremor', name: T3('震颤录像', 'Tremor recording', 'Grabación de temblor'), dur: 16,
+    shows: T3('拍一段手静止和平举的录像给医生看。视频估计节律的频率，不判断原因。', 'A short recording of the hands at rest and held out, for the doctor. The video estimates the rhythm, not its cause.', 'Una grabación corta de las manos en reposo y extendidas, para el médico. El video estima el ritmo, no su causa.'),
+    room: { chair: { pos: [0, 0, 0], yaw: 0 }, floor: [-1.4, 1.4, -1, 2.6], walls: [wallBehind(-.62)] },
+    phone: { pos: [0, 1.05, 1.85], aim: [0, .9, 0], h: T3('胸口的高度', 'chest height', 'a la altura del pecho'), d: T3('正前方 1.5–2 米', '1.5–2 m in front', 'a 1,5–2 m de frente') },
+    view: { move: [.35, .15, 3.6, [0, .72, 0]], setup: [.8, .55, 4.6, [0, .6, .8]], points: [.35, .15, 3.6, [0, .72, 0]] }, sideAz: Math.PI / 2,
+    dims: [{ a: [0, 0, .35], b: [0, 0, 1.85], text: T3('1.5–2 米', '1.5–2 m', '1,5–2 m'), at: [.35, 0, 1.1] }],
+    steps: [
+      { t: 0, s: T3('坐好，双手放在大腿上，放松', 'Sit comfortably, hands resting on the thighs', 'Siéntese cómodamente, con las manos apoyadas en los muslos') },
+      { t: 1, s: T3('手放着不动 20 秒', 'Hands at rest for 20 seconds', 'Manos en reposo durante 20 segundos'), small: T3('演示缩短为 6 秒', 'shortened to 6 s in the demo', 'acortado a 6 s en la demostración') },
+      { t: 7.2, s: T3('双臂向前平举 20 秒', 'Arms held out in front for 20 seconds', 'Brazos extendidos al frente durante 20 segundos'), small: T3('演示缩短为 6 秒', 'shortened to 6 s in the demo', 'acortado a 6 s en la demostración') },
+      { t: 14.2, s: T3('放下手臂，结束', 'Lower the arms; done', 'Baje los brazos; terminado') },
+    ],
+    pose: tr.pose, bad: null,
+    chip(tt) { return tt < 7.2 ? T3('静止', 'At rest', 'En reposo')[lang] : tt < 14.2 ? T3('平举', 'Held out', 'Extendidos')[lang] : T3('结束', 'Done', 'Terminado')[lang]; },
+    note: () => t('fast'),
+    helper: null,
+    need: [T3('面对手机的椅子，光线好', 'A chair facing the phone, in good light', 'Una silla frente al teléfono, con buena luz')],
+    helperText: T3('帮忙开始录像即可，不需要计时。', 'Help to start the recording; no timing is needed.', 'Ayude a iniciar la grabación; no hace falta cronometrar.'),
+    counts: [T3('双手、手肘、肩膀都要在画面里', 'Both hands, elbows and shoulders in view', 'Las dos manos, los codos y los hombros a la vista'), T3('不用计时', 'No timing needed', 'No hace falta cronometrar')],
+    bads: [T3('坐得太近，手出了画面', 'Sitting too close, so the hands leave the picture', 'Sentarse demasiado cerca, así que las manos salen de la imagen'), T3('手搭在扶手或桌上', 'Hands resting on armrests or a table', 'Manos apoyadas en reposabrazos o en una mesa')],
+    badCaption: null,
+    safe: [T3('平举累了就放下', 'Lower the arms if they tire', 'Baje los brazos si se cansan')],
+    src: 'Williams 2021',
+  });
+
+  /* ---- arm curl (Senior Fitness Test) */
+  const cu = curlPlan({}), cuBad = curlPlan({ swing: true, partial: true });
+  TASKS.push({
+    id: 'armCurl', name: T3('30 秒屈臂', '30-second arm curl', 'Flexión de brazo en 30 segundos'), dur: cu.go + 30 + 3,
+    shows: T3('上肢力量：30 秒内能把哑铃完整举起几次（老年人体适能测试）。', 'Upper-body strength: full curls of a weight in 30 seconds (Senior Fitness Test).', 'Fuerza de la parte superior del cuerpo: flexiones completas con una mancuerna en 30 segundos (Senior Fitness Test).'),
+    room: { chair: { pos: [0, 0, 0], yaw: 0 }, floor: [-2.4, 1.2, -1, 1.6], walls: [wallBehind(-.62)] },
+    phone: { pos: [-2.1, 1.0, -.15], aim: [0, .9, -.15], h: T3('胸口的高度', 'chest height', 'a la altura del pecho'), d: T3('拿哑铃那一侧，2 米', '2 m away, on the side of the weight', 'a 2 m, del lado de la mancuerna') },
+    view: { move: [-1.2, .14, 3.5, [-.1, .75, -.05]], setup: [-.5, .55, 4.8, [-.8, .55, .1]], points: [-1.35, .12, 3.5, [-.1, .75, -.05]] }, sideAz: -Math.PI / 2,
+    dims: [{ a: [-.35, 0, -.15], b: [-2.1, 0, -.15], text: T3('约 2 米', 'about 2 m', 'unos 2 m'), at: [-1.2, 0, .15] }],
+    labels: [{ p: [-.55, .5, .3], text: T3('哑铃：女 2.3 kg · 男 3.6 kg', 'weight: women 5 lb · men 8 lb', 'mancuerna: mujeres 2,3 kg · hombres 3,6 kg'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('坐直，双脚平放；拿哑铃的手臂垂在身侧，掌心朝向身体', 'Sit up straight, feet flat; the arm with the weight hangs at the side, palm facing in', 'Siéntese derecho, con los pies apoyados; el brazo con la mancuerna cuelga a un lado, con la palma hacia el cuerpo') },
+      { t: cu.go, s: T3('听到“开始”，弯肘把哑铃举到最高，同时把掌心转向上', 'At “Go”, curl the weight all the way up, turning the palm up', 'Al oír «Ya», suba la mancuerna del todo girando la palma hacia arriba'), cue: 'go' },
+      { t: cu.go + .9, s: T3('再完全伸直放下；上臂贴着身体不动', 'Then lower it until the arm is straight; the upper arm stays still against the body', 'Después bájela hasta estirar el brazo; la parte superior del brazo queda quieta junto al cuerpo') },
+      { t: cu.go + 30, s: T3('30 秒到：手臂已举过一半，这次也算', 'At 30 s: an arm more than halfway up counts', 'A los 30 s: si el brazo está más de medio camino arriba, cuenta'), cue: 'stop' },
+      { t: cu.go + 31.2, s: T3('放下休息', 'Put the weight down', 'Deje la mancuerna') },
+    ],
+    pose: cu.pose, bad: cuBad.pose,
+    extraOf: b => (J, P, cap, ball) => dumbbell(J, P, cap, ball, b.curl || 0),
+    chip(tt) { const s = clamp(30 - (tt - cu.go), 0, 30); return (tt < cu.go ? t('left', { s: '30' }) : t('left', { s: num(s, 0) })) + ' · ' + t('done', { n: cu.count(tt) }); },
+    helper: null,
+    need: [T3('无扶手的直背椅，靠墙', 'A straight-backed chair without armrests, against a wall', 'Una silla de respaldo recto sin reposabrazos, contra la pared'), T3('哑铃：女性 2.3 kg（5 磅），男性 3.6 kg（8 磅）', 'A dumbbell: 5 lb (2.3 kg) for women, 8 lb (3.6 kg) for men', 'Una mancuerna: 2,3 kg (5 lb) para mujeres y 3,6 kg (8 lb) para hombres')],
+    helperText: T3('跪或坐在拿哑铃那一侧，手指轻放在上臂中间；每次举到顶、放到底，就大声数一次。', 'Kneel or sit on the side of the weight, fingers lightly on the upper arm, and count aloud each curl that goes all the way up and down.', 'Arrodíllese o siéntese del lado de la mancuerna, con los dedos apoyados suavemente en la parte superior del brazo, y cuente en voz alta cada flexión que sube y baja del todo.'),
+    counts: [T3('举到顶、放到完全伸直，才算一次', 'A curl counts only all the way up and all the way down', 'Una flexión cuenta solo si sube del todo y baja del todo'), T3('30 秒到时举过一半，也算一次', 'More than halfway up at 30 s counts', 'Cuenta si a los 30 s va más de medio camino arriba'), T3('先练 1–2 次，再正式做 1 次', 'Practise once or twice, then one trial', 'Practique una o dos veces y luego haga un intento')],
+    bads: [T3('上臂往前甩，借力举起', 'Swinging the upper arm forward to help', 'Echar la parte superior del brazo hacia delante para ayudarse'), T3('没完全伸直就又举起', 'Curling again before the arm is straight', 'Volver a subir antes de estirar el brazo')],
+    badCaption: T3('金色：上臂往前甩、手臂没伸直——这几次都不算。', 'Gold: swinging the upper arm and not straightening it, so these curls don’t count.', 'En dorado: echa la parte superior del brazo hacia delante y no lo estira, así que estas flexiones no cuentan.'),
+    safe: [T3('肩膀或手肘疼就停', 'Stop for shoulder or elbow pain', 'Pare si le duele el hombro o el codo'), T3('呼吸自然，不要憋气', 'Keep breathing; don’t hold your breath', 'Siga respirando; no aguante la respiración')],
+    src: 'Rikli & Jones, Senior Fitness Test (PhenX 150202)',
+  });
+
+  /* ---- 2-minute step */
+  const sp = stepPlan({}), spBad = stepPlan({ allLow: true });
+  const targetY = .745;
+  TASKS.push({
+    id: 'step2min', name: T3('2 分钟原地踏步', '2-minute step', 'Marcha en el sitio de 2 minutos'), dur: sp.go + sp.n * sp.P + 1.6,
+    shows: T3('有氧耐力：2 分钟内右膝抬到目标高度的次数（老年人体适能测试）。', 'Aerobic endurance: how many times the right knee reaches the target in 2 minutes (Senior Fitness Test).', 'Resistencia aeróbica: cuántas veces la rodilla derecha llega a la marca en 2 minutos (Senior Fitness Test).'),
+    room: { floor: [-1.4, 3, -1.2, 1.6], walls: [{ pts: [[-.55, 0, -1.1], [-.55, 0, 1.1], [-.55, 1.6, 1.1], [-.55, 1.6, -1.1]], n: [1, 0, 0],
+      decals: [{ pts: [[-.548, targetY - .012, -.7], [-.548, targetY - .012, .9], [-.548, targetY + .012, .9], [-.548, targetY + .012, -.7]], m: 'tape', at: [-.54, targetY, -.85], label: T3('目标高度', 'target height', 'altura de la marca') }] }] },
+    phone: { pos: [2.5, .85, .1], aim: [0, .75, .1], h: T3('髋的高度', 'hip height', 'a la altura de la cadera'), d: T3('侧面 2–3 米', '2–3 m to the side', 'a 2–3 m de lado') },
+    view: { move: [1.15, .16, 4.2, [-.1, .8, .1]], setup: [.95, .6, 5.4, [.8, .5, .1]], points: [1.3, .14, 4.2, [-.1, .8, .1]] }, sideAz: Math.PI / 2,
+    dims: [{ a: [.35, 0, .1], b: [2.5, 0, .1], text: T3('2–3 米', '2–3 m', '2–3 m'), at: [1.45, 0, .45] }],
+    labels: [{ p: [-.5, .5, .62], text: T3('膝盖骨', 'kneecap', 'rótula'), tone: 'ink' }, { p: [-.5, 1.02, .62], text: T3('髂骨顶', 'top of the hip bone', 'parte superior del hueso de la cadera'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('靠墙站；在墙上贴出目标高度：膝盖骨和髂骨顶的正中间', 'Stand by a wall; tape the target on it: midway between kneecap and the top of the hip bone', 'Póngase junto a una pared y marque en ella la altura con cinta: a medio camino entre la rótula y la parte superior del hueso de la cadera') },
+      { t: sp.go, s: T3('听到“开始”原地踏步，右腿先', 'At “Go”, step in place, right leg first', 'Al oír «Ya», marche en el sitio, primero con la pierna derecha'), cue: 'go' },
+      { t: sp.go + sp.P * 1, s: T3('每次两个膝盖都要抬到目标高度', 'Both knees rise to the target every time', 'Las dos rodillas suben hasta la marca cada vez') },
+      { t: sp.go + sp.P * 8, s: T3('这次右膝没抬到目标，不算', 'This right lift fell short of the target: not counted', 'Esta vez la rodilla derecha no llegó a la marca: no cuenta') },
+      { t: sp.go + sp.P * 11, s: T3('累了可以放慢或停下，计时不停', 'Slow down or rest if needed; the clock keeps running', 'Vaya más despacio o descanse si lo necesita; el tiempo sigue corriendo') },
+      { t: sp.go + sp.n * sp.P - .3, s: T3('只数右膝抬到目标的次数', 'Count only the right knee reaching the target', 'Cuente solo cuando la rodilla derecha llega a la marca') },
+    ],
+    pose: sp.pose, bad: spBad.pose,
+    chip(tt) { const l = sp.lift(tt), n = sp.counted(tt), short = l.low && l.side === 'R' && l.w > .3;
+      return P(`右膝达标 ${n} 次`, `Right knee at target: ${n}`, `Rodilla derecha en la marca: ${n}`) + (short ? P(' · 这次没到目标', ' · this one is short', ' · esta no llega') : ''); },
+    note: () => t('short', { real: P('2 分钟', '2 min', '2 min'), demo: num(sp.n * sp.P, 0) }),
+    helper: null,
+    need: [T3('一面墙或台面：可以扶，也用来贴目标高度', 'A wall or counter to hold, and to mark the target on', 'Una pared o encimera para apoyarse y para marcar la altura'), T3('胶带和卷尺', 'Tape and a tape measure', 'Cinta adhesiva y una cinta métrica')],
+    helperText: T3('站在侧面，看右膝是否碰到目标线，并数次数。', 'Stand to the side, watch whether the right knee reaches the tape, and count.', 'Quédese a un lado, observe si la rodilla derecha llega a la cinta y cuente.'),
+    counts: [T3('只数右膝；两个膝盖都要抬到目标高度', 'Count the right knee only; both knees must reach the target', 'Cuente solo la rodilla derecha; las dos rodillas deben llegar a la marca'), T3('没抬到目标的这次不算', 'A lift that falls short isn’t counted', 'Una subida que no llega no cuenta'), T3('可以放慢或休息，计时不停', 'Slowing or resting is allowed; the clock keeps running', 'Se puede ir más despacio o descansar; el tiempo sigue corriendo')],
+    bads: [T3('膝盖抬不到目标高度还在数', 'Counting lifts that don’t reach the target', 'Contar subidas que no llegan a la marca'), T3('目标贴得太低', 'Taping the target too low', 'Poner la marca demasiado baja')],
+    badCaption: T3('金色：膝盖都没抬到目标线，这些步不算。', 'Gold: the knees never reach the tape, so none of these steps count.', 'En dorado: las rodillas nunca llegan a la cinta, así que ninguno de estos pasos cuenta.'),
+    safe: [T3('旁边有墙或台面可以扶', 'A wall or counter within reach', 'Una pared o encimera al alcance'), T3('头晕、胸痛、气短就马上停', 'Stop at once for dizziness, chest pain or breathlessness', 'Pare de inmediato si hay mareo, dolor en el pecho o falta de aire')],
+    src: 'Rikli & Jones, Senior Fitness Test (PhenX 150202)',
+  });
+
+  /* ---- chair sit-and-reach */
+  const rc = reachPlan({}), rcBad = reachPlan({ bend: true });
+  const toe0 = rc.toeOf(rc.ankR0);
+  TASKS.push({
+    id: 'sitReach', sideDist: 1.5, name: T3('椅式坐位体前伸', 'Chair sit-and-reach', 'Sentado y alcanzar en silla'), dur: 19,
+    shows: T3('下肢后侧（腘绳肌）的柔韧性：中指尖能伸到离鞋尖多远（老年人体适能测试）。', 'Flexibility of the back of the leg: how far the fingertips reach past the shoe (Senior Fitness Test).', 'Flexibilidad de la parte posterior de la pierna: hasta dónde llegan las puntas de los dedos respecto a la punta del zapato (Senior Fitness Test).'),
+    room: { chair: { pos: [0, 0, 0], yaw: 0 }, ruler: { c: [toe0[0], toe0[1] + .03, toe0[2]], yaw: 0 }, floor: [-2.6, 1.4, -1, 1.8], walls: [wallBehind(-.62)] },
+    phone: { pos: [-2.4, .55, .3], aim: [0, .55, .3], h: T3('椅面的高度', 'seat height', 'a la altura del asiento'), d: T3('伸直腿那一侧，2–2.5 米', '2–2.5 m away, on the side of the straight leg', 'a 2–2,5 m, del lado de la pierna estirada') },
+    view: { move: [-1.25, .14, 3.4, [0, .5, .25]], setup: [-.6, .6, 4.9, [-.9, .45, .3]], points: [-1.35, .12, 3.4, [0, .5, .25]] }, sideAz: -Math.PI / 2,
+    dims: [{ a: [-.35, 0, .3], b: [-2.4, 0, .3], text: T3('2–2.5 米', '2–2.5 m', '2–2,5 m'), at: [-1.35, 0, .6] }],
+    labels: [{ p: add(toe0, [-.05, .14, 0]), text: T3('0 = 鞋尖', '0 = tip of the shoe', '0 = punta del zapato'), tone: 'ink' }],
+    steps: [
+      { t: 0, s: T3('坐在椅子前缘；一条腿伸直，脚跟着地、脚尖朝上，另一只脚平放', 'Sit on the front edge; one leg straight, heel down and toes up; the other foot flat', 'Siéntese en el borde delantero; una pierna estirada, con el talón en el suelo y los dedos del pie hacia arriba; el otro pie plano') },
+      { t: 1, s: T3('双手叠放，两个中指对齐', 'One hand on the other, middle fingers even', 'Una mano sobre la otra, con los dedos medios igualados') },
+      { t: 2, s: T3('慢慢向前弯腰，沿着腿去够脚尖', 'Bend forward slowly, reaching along the leg towards the toes', 'Inclínese despacio hacia delante, deslizando las manos por la pierna hacia los dedos del pie') },
+      { t: 4.5, s: T3('够到最远处，保持 2 秒', 'Hold the furthest reach for 2 seconds', 'Mantenga el máximo alcance 2 segundos') },
+      { t: 6.5, s: T3('量中指尖到鞋尖：超过为正，不到为负', 'Measure fingertips to shoe tip: past it is plus, short of it minus', 'Mida de las puntas de los dedos a la punta del zapato: si pasa, positivo; si no llega, negativo') },
+      { t: 10.5, s: T3('先练 2 次，再正式做 2 次，取较好的一次', 'Practise twice, then two trials; the better one counts', 'Practique dos veces y luego haga dos intentos; cuenta el mejor') },
+    ],
+    pose: rc.pose, bad: rcBad.pose,
+    chip(tt) {
+      const st = rc.pose(tt).st, tri = tt < 10 ? 0 : 1;
+      if (st.hold !== undefined) return P('保持 ', 'Hold ', 'Mantenga ') + num(clamp(2 - st.hold, 0, 2), 0) + P(' 秒', ' s', ' s');
+      if (tt > 6.5 && tt < 10) return P('第 1 次 ', 'Trial 1 ', 'Intento 1 ') + '−4 cm';
+      if (tt > 15 && tt < 19) return P('第 2 次 +2 cm · 取较好的 +2 cm', 'Trial 2 +2 cm · best +2 cm', 'Intento 2 +2 cm · el mejor +2 cm');
+      return P(`第 ${tri + 1} 次`, `Trial ${tri + 1}`, `Intento ${tri + 1}`);
+    },
+    helper: null,
+    need: [T3('有靠背的椅子，座高约 43 cm，靠墙放稳', 'A chair about 43 cm high, steady against a wall', 'Una silla de unos 43 cm de altura, firme contra la pared'), T3('一把 45 cm（18 英寸）的尺', 'An 18-inch (45 cm) ruler', 'Una regla de 45 cm (18 pulgadas)')],
+    helperText: T3('跪在伸直腿那一侧，尺子的 0 点对准鞋尖；保持 2 秒时读数，精确到约 1 厘米。', 'Kneel on the side of the straight leg, with the ruler’s 0 at the tip of the shoe; read it during the 2-second hold, to about 1 cm.', 'Arrodíllese del lado de la pierna estirada, con el 0 de la regla en la punta del zapato; lea durante los 2 segundos de pausa, con una precisión de 1 cm.'),
+    counts: [T3('伸直的膝盖必须保持伸直', 'The straight knee must stay straight', 'La rodilla estirada debe seguir estirada'), T3('保持 2 秒再读数；超过鞋尖为正，不到为负', 'Read during the 2-second hold: past the shoe plus, short minus', 'Lea durante los 2 segundos de pausa: si pasa del zapato, positivo; si no llega, negativo'), T3('选伸得较好的那条腿；做两次取较好的', 'Use the better leg; two trials, keep the better', 'Use la pierna que mejor alcance; dos intentos, se queda el mejor')],
+    bads: [T3('膝盖弯了还在量——应该慢慢坐回，直到膝盖伸直', 'Measuring with the knee bent: sit back slowly until it is straight', 'Medir con la rodilla doblada: hay que volver atrás despacio hasta que esté estirada'), T3('猛地往前弹', 'Bouncing forward', 'Dar rebotes hacia delante')],
+    badCaption: T3('金色：为了够得更远，伸直的那条腿弯了——这样的读数不算。', 'Gold: the straight leg bends to reach further, so this reading doesn’t count.', 'En dorado: la pierna estirada se dobla para llegar más lejos, así que esta lectura no cuenta.'),
+    safe: [T3('慢慢弯，不要弹', 'Bend slowly, never bounce', 'Inclínese despacio, sin rebotes'), T3('严重骨质疏松，或近期做过髋、膝、腰手术，先问医生', 'Ask a doctor first with severe osteoporosis or recent hip, knee or back surgery', 'Consulte antes con el médico si tiene osteoporosis grave o una cirugía reciente de cadera, rodilla o espalda')],
+    src: 'Rikli & Jones, Senior Fitness Test (PhenX 150202)',
+  });
+
+  /* ---- back scratch (Senior Fitness Test) */
+  const bs = scratchPlan({}), bsBad = scratchPlan({ bad: true });
+  const cm = g => (g > 0 ? '+' : '−') + Math.round(Math.abs(g) * 100) + ' cm';
+  TASKS.push({
+    id: 'backScratch', sideDist: 1.2, name: T3('背后够手', 'Back scratch', 'Rascarse la espalda'), dur: 14.6,
+    shows: T3('肩膀的柔韧性：两只手在背后，中指尖能不能碰到（老年人体适能测试）。', 'Shoulder flexibility: whether the middle fingers can meet behind the back (Senior Fitness Test).', 'Flexibilidad del hombro: si los dedos medios llegan a juntarse detrás de la espalda (Senior Fitness Test).'),
+    room: { floor: [-1.4, 1.4, -2.4, 1.2], walls: [{ pts: [[1.2, 0, .9], [-1.2, 0, .9], [-1.2, 1.8, .9], [1.2, 1.8, .9]], n: [0, 0, -1] }] },
+    phone: { pos: [.5, 1.3, -2.45], aim: [0, 1.1, 0], h: T3('肩膀的高度', 'shoulder height', 'a la altura de los hombros'), d: T3('身后 2–3 米，稍偏一侧', '2–3 m behind, a little to one side', 'a 2–3 m detrás, un poco hacia un lado') },
+    view: { move: [Math.PI - .3, .18, 4.1, [0, .92, -.05]], setup: [Math.PI - 1.05, .62, 6.1, [.3, .55, -1.1]], points: [Math.PI - .2, .16, 4.1, [0, .92, -.05]] }, sideAz: -Math.PI / 2,
+    dims: [{ a: [.06, 0, -.3], b: [.5, 0, -2.45], text: T3('2–3 米', '2–3 m', '2–3 m'), at: [.62, 0, -1.35] }],
+    steps: [
+      { t: 0, s: T3('站直；先练一下，选做得较好的一边', 'Stand tall; practise first and pick the better side', 'Póngase derecho; practique primero y elija el lado que mejor le salga') },
+      { t: 1.4, s: T3('上面的手从同侧肩膀上方伸到背中间：掌心朝背，手指伸直', 'Top hand over the same shoulder and down the middle of the back: palm to the back, fingers straight', 'La mano de arriba por encima del mismo hombro y hacia abajo por el centro de la espalda: palma hacia la espalda, dedos estirados') },
+      { t: 2.3, s: T3('下面的手从腰后往上伸：手背贴背，手指伸直', 'Bottom hand up from the waist: back of the hand against the back, fingers straight', 'La mano de abajo sube desde la cintura: el dorso de la mano contra la espalda, dedos estirados') },
+      { t: 3.6, s: T3('两个中指尽量靠近，停住；帮手量两个指尖的距离', 'Bring the middle fingers as close as you can and hold; the helper measures between the tips', 'Acerque los dedos medios todo lo que pueda y mantenga; quien ayuda mide entre las puntas'), small: T3('够不到记负数，重叠记正数', 'A gap is minus, an overlap plus', 'Separados es negativo; superpuestos, positivo') },
+      { t: 8.4, s: T3('练 2 次后正式做 2 次，取较好的一次', 'Two practice tries, then two trials; the better one counts', 'Dos intentos de práctica y luego dos intentos; cuenta el mejor') },
+    ],
+    pose: bs.pose, bad: bsBad.pose,
+    extraOf: b => (J, P, cap, ball) => scratchFingers(J, P, cap, ball, b.fingers || 0),
+    chip(tt) {
+      const st = bs.state(tt), a = bs.trials[0].gap, b = bs.trials[1].gap, best = Math.max(a, b);
+      if (st.trial === 0 && (st.hold !== undefined || tt > bs.trials[0].t0 + bs.reachS + bs.holdS)) return P('第 1 次 ', 'Trial 1 ', 'Intento 1 ') + cm(a);
+      if (st.trial === 1 && (st.hold !== undefined || tt > bs.trials[1].t0 + bs.reachS + bs.holdS)) return P('第 2 次 ', 'Trial 2 ', 'Intento 2 ') + cm(b) + P(' · 取较好的 ', ' · best ', ' · el mejor ') + cm(best);
+      return P(`第 ${st.trial + 1} 次`, `Trial ${st.trial + 1}`, `Intento ${st.trial + 1}`);
+    },
+    bubble(tt, J) {
+      const st = bs.state(tt);
+      if (st.hold === undefined) return null;
+      const d = Math.round(Math.abs(st.gap) * 100);
+      return { p: add(mix(J.handR, J.handL, .5), [.55, .02, -.05]), text: P(`相距 ${d} cm，记 ${cm(st.gap)}`, `${d} cm apart: ${cm(st.gap)}`, `${d} cm de separación: ${cm(st.gap)}`) };
+    },
+    helper: () => ({ at: [-.6, 0, -.55], facePerson: true }),
+    need: [T3('一把尺或软尺', 'A ruler or tape measure', 'Una regla o cinta métrica'), T3('能站开的空地', 'Room to stand', 'Espacio para estar de pie')],
+    gate: [T3('今天肩膀不疼；过去 6 个月没有做过肩部手术', 'No shoulder pain today, and no shoulder surgery in the past six months', 'Hoy sin dolor de hombro y sin cirugía de hombro en los últimos seis meses'), T3('不扶东西能站稳（两只手都在背后，没法扶）', 'Can stand steady without holding on (both hands are behind the back)', 'Puede estar de pie estable sin agarrarse (las dos manos están detrás de la espalda)')],
+    helperText: T3('站在身后、远离手机的一侧。不要移动对方的手，需要时把两个中指引导对齐，但不要拉手。停住时量两个中指尖之间的距离，精确到约 1 厘米。', 'Stand behind, a little to the side away from the phone. Without moving the hands, guide the middle fingers into line if needed, but don’t pull the hands together. Measure between the fingertips during the hold, to about 1 cm.', 'Colóquese detrás, un poco hacia el lado contrario al teléfono. Sin mover las manos, guíe los dedos medios para alinearlos si hace falta, pero no junte las manos tirando de ellas. Mida entre las puntas de los dedos durante la pausa, con una precisión de 1 cm.'),
+    counts: [T3('量两个中指尖之间的距离：够不到为负，重叠为正', 'Measure between the middle fingertips: a gap is minus, an overlap plus', 'Mida entre las puntas de los dedos medios: separados es negativo; superpuestos, positivo'), T3('先练 2 次，正式做 2 次，取较好的', 'Two practice tries, two trials, keep the better', 'Dos intentos de práctica, dos intentos, se queda el mejor'), T3('用做得较好的一边（哪只手在上）', 'Use the better side (whichever hand goes on top)', 'Use el lado que mejor le salga (la mano que va arriba)')],
+    bads: [T3('手指勾住、互相拉', 'Hooking the fingers together and pulling', 'Enganchar los dedos y tirar'), T3('手没沿着背的中间，或身体往后仰', 'Hands off the middle of the back, or leaning back', 'Manos fuera del centro de la espalda, o inclinarse hacia atrás')],
+    badCaption: T3('金色：手偏到一边、身体往后仰——这样量出的距离不能和常模比较。', 'Gold: the hands drift off the middle and the body leans back, so the distance can’t be compared with the norms.', 'En dorado: las manos se apartan del centro y el cuerpo se inclina hacia atrás, así que la distancia no se puede comparar con las normas.'),
+    safe: [T3('慢慢伸，疼就停', 'Reach slowly; stop if it hurts', 'Llegue despacio; pare si le duele'), T3('不要用力拉', 'Don’t pull', 'No tire')],
+    src: 'Rikli & Jones, Senior Fitness Test',
+  });
+})();
+
+/* ============================================================== helper */
+function helperBody(task, tt) {
+  if (!task.helper) return null;
+  const h = task.helper(tt);
+  const main = task.pose(tt).p;
+  const toward = h.facePerson ? Math.atan2(main[0] - h.at[0], main[2] - h.at[2]) : null;
+  const ahead = task.helper(tt + .25).at, dz = sub(ahead, h.at), moving = len(dz) > .03;
+  const yaw = moving ? Math.atan2(dz[0], dz[2]) : (toward ?? 0);
+  const f = facing(yaw), r = rightOf(f);
+  const g = [h.at[0], 0, h.at[2]];
+  const ph = (h.at[2] + h.at[0]) / .55 * Math.PI;
+  const s = moving ? Math.sin(ph) : 0, lift = moving ? .05 : 0;
+  const ankles = { L: add(add(add(g, sc(r, -.1)), sc(f, .2 * s)), [0, B.ankleH + lift * Math.max(0, -Math.cos(ph)), 0]),
+                   R: add(add(add(g, sc(r, .1)), sc(f, -.2 * s)), [0, B.ankleH + lift * Math.max(0, Math.cos(ph)), 0]) };
+  const reach = h.reach || 0;
+  const arms = moving ? { L: { flex: -.25 * s, abd: .08, elbow: .3 }, R: { flex: .25 * s, abd: .08, elbow: .3 } }
+                      : { L: { flex: .35 + .7 * reach, abd: .15, elbow: .9 - .5 * reach }, R: { flex: .35 + .7 * reach, abd: .15, elbow: .9 - .5 * reach } };
+  return makeBody({ p: [g[0], STAND_Y - .01, g[2]], yaw, lean: .05, ankles, arms });
+}
+
+/* ================================================================ scene */
+const state = { task: 0, tab: 'move', t: 0, playing: true, slow: false, mix: 50, phoneView: false, cmp: 'overlay' };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduceMotion) state.playing = false;
+const cam = { az: 1, el: .3, dist: 5, target: [0, .7, 0], fov: 32 * Math.PI / 180 };
+const goal = { az: 1, el: .3, dist: 5, target: [0, .7, 0] };
+const task = () => TASKS[state.task];
+
+function aim() {
+  const v = task().view[state.tab];
+  [goal.az, goal.el, goal.dist] = v; goal.target = v[3].slice();
+  if (sideBySide()) { const o = sideOffset(); goal.target = add(add(goal.target, sc(o, .5)), [0, -.06, 0]); goal.dist *= 1.2 + .12 * len(o); }
+}
+const sideBySide = () => state.tab === 'points' && state.cmp === 'side' && !!task().bad;
+/** Side by side: the mistake stands to the screen's left of the right way, one metre across the view. */
+function sideOffset() {
+  const az = task().view.points[0], f = [-Math.sin(az), 0, -Math.cos(az)], r = unit(cross(f, UP));
+  return sc(r, -(task().sideDist || 1.05));
+}
+const POS_KEYS = ['pelvis', 'neck', 'head', 'hipL', 'hipR', 'kneeL', 'kneeR', 'ankleL', 'ankleR', 'toeL', 'toeR', 'heelL', 'heelR',
+                  'shL', 'shR', 'elL', 'elR', 'wrL', 'wrR', 'handL', 'handR'];
+function moved(J, o) { const K = Object.assign({}, J); for (const k of POS_KEYS) K[k] = add(J[k], o); return K; }
+function movedPrims(P, o) {
+  return P.map(q => q.k === 'poly' ? Object.assign({}, q, { pts: q.pts.map(v => add(v, o)), at: add(q.at, o) })
+                                  : Object.assign({}, q, { a: add(q.a, o), b: q.b ? add(q.b, o) : q.b }));
+}
+
+function bodiesAt(tt) {
+  const tk = task(), out = [];
+  const spec = tk.pose(tt);
+  const extra = tk.extraOf ? tk.extraOf(spec) : null;
+  if (state.tab === 'points' && tk.bad) {
+    const k = state.mix / 50, badA = clamp(2 - k, 0, 1), okA = clamp(k, 0, 1);
+    const bs = tk.bad(tt), side = sideBySide();
+    let J = makeBody(bs);
+    if (side) J = moved(J, sideOffset());
+    const bx = tk.extraOf ? tk.extraOf(bs) : null, ref = !!tk.cmpKeys;   // a reference to compare with, not a mistake
+    out.push({ J, alpha: badA, pal: ref ? GHOST : GOLD, behind: !side, ghost: !side, extra: bx, label: side ? (ref ? L(tk.cmpKeys[0]) : 'k_bad') : null });
+    out.push({ J: makeBody(spec), alpha: okA, main: true, extra, label: side ? (ref ? L(tk.cmpKeys[1]) : 'k_ok') : null });
+  } else {
+    out.push({ J: makeBody(spec), alpha: 1, main: true, extra });
+  }
+  if (state.tab === 'setup') { const h = helperBody(tk, tt); if (h) out.push({ J: h, alpha: 1, pal: GHOST, ghost: true }); }
+  return out;
+}
+
+/* ================================================================== ui */
+function applyLang() {
+  document.documentElement.lang = { zh: 'zh-Hans', en: 'en', es: 'es' }[lang];
+  $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $$('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  $('#play').textContent = t(state.playing ? 'pause' : 'play');
+  renderPicker(); renderTask();
+}
+
+function renderPicker() {
+  const box = $('#picker');
+  box.textContent = '';
+  TASKS.forEach((tk, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = L(tk.name);
+    b.setAttribute('aria-pressed', String(i === state.task));
+    if (tk.isNew) { const s = document.createElement('span'); s.className = 'new'; s.textContent = t('new'); b.append(s); }
+    b.addEventListener('click', () => selectTask(i));
+    box.append(b);
+  });
+}
+
+function fillList(sel, items) {
+  const ul = $(sel); ul.textContent = '';
+  for (const it of items) { const li = document.createElement('li'); li.textContent = L(it); ul.append(li); }
+}
+
+function renderTask() {
+  const tk = task();
+  $('#stageTitle').textContent = L(tk.name);
+  $('#view').setAttribute('aria-label', t('view_label', { name: L(tk.name) }));
+  $('#moveTitle').textContent = L(tk.name);
+  $('#moveShows').textContent = L(tk.shows);
+  const tagBox = $('#moveTags'); tagBox.textContent = '';
+  for (const tg of tk.tags || []) { const s = document.createElement('span'); s.className = 'tag'; s.textContent = L(tg); tagBox.append(s); }
+  const ol = $('#steps'); ol.textContent = '';
+  tk.steps.forEach((st, i) => {
+    const li = document.createElement('li');
+    const div = document.createElement('div'); div.textContent = L(st.s);
+    if (st.small) { const sm = document.createElement('small'); sm.textContent = L(st.small); div.append(sm); }
+    li.append(div); li.tabIndex = 0;
+    const jump = () => { state.t = st.t + .01; lastStep = -1; };
+    li.addEventListener('click', jump);
+    li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jump(); } });
+    ol.append(li);
+  });
+  lastStep = -1;
+  fillList('#need', tk.need);
+  const gates = (tk.noGate ? [] : BASE_GATE).concat(tk.gate || []);
+  fillList('#gate', gates);
+  $('#gate').hidden = $('#gateTitle').hidden = !gates.length;
+  $('#phoneText').textContent = P(`${L(tk.phone.d)}，${L(tk.phone.h)}。`, `${L(tk.phone.d)}, ${L(tk.phone.h)}.`, `${L(tk.phone.d)}, ${L(tk.phone.h)}.`);
+  const tags = $('#phoneTags'); tags.textContent = '';
+  const tg = document.createElement('span'); tg.className = 'tag' + (tk.phone.land ? ' gold' : ''); tg.textContent = t(tk.phone.land ? 'landscape' : 'portrait'); tags.append(tg);
+  if (tk.phone.land) { const n = document.createElement('span'); n.style.fontSize = 'calc(12.5px * var(--ts))'; n.style.color = 'var(--ink-2)';
+    n.textContent = P('走路的测试横着拍，画面才装得下整段路', 'Walking tests are filmed in landscape so the whole path fits', 'Las pruebas de marcha se graban en horizontal para que quepa todo el recorrido'); tags.append(n); }
+  $('#helperText').textContent = L(tk.helperText);
+  fillList('#counts', tk.counts); fillList('#bads', tk.bads); fillList('#safe', tk.safe);
+  $('#src').textContent = t('src', { s: tk.src });
+  $('#fadeBox').hidden = !tk.bad;
+  $$('#cmp button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cmp === state.cmp)));
+  $('#badCaption').textContent = tk.badCaption ? L(tk.badCaption) : '';
+  $('#badCaption').classList.toggle('ref', !!tk.cmpKeys);
+  $('#panel-points h2').textContent = tk.cmpKeys ? P('对照着看', 'Compare', 'Para comparar') : t('points_title');
+  const kb = $('.key.bad'), ko = $('.key.ok');
+  kb.classList.toggle('ref', !!tk.cmpKeys);
+  kb.querySelector('span').textContent = tk.cmpKeys ? L(tk.cmpKeys[0]) : t('k_bad');
+  ko.querySelector('span').textContent = tk.cmpKeys ? L(tk.cmpKeys[1]) : t('k_ok');
+  $('#mix').setAttribute('aria-label', tk.cmpKeys
+    ? P(`在“${L(tk.cmpKeys[0])}”和“${L(tk.cmpKeys[1])}”之间切换`, `Fade between “${L(tk.cmpKeys[0])}” and “${L(tk.cmpKeys[1])}”`, `Pasar de «${L(tk.cmpKeys[0])}» a «${L(tk.cmpKeys[1])}»`)
+    : P('在常见错误和正确之间切换', 'Fade between the mistake and the right way', 'Pasar del error frecuente a la forma correcta'));
+  $('#phoneBtn').textContent = t(state.phoneView ? 'phone_on' : 'phone_off');
+  $('#phoneBtn').setAttribute('aria-pressed', String(state.phoneView));
+  framing = null;
+}
+
+function selectTask(i) {
+  state.task = i; state.t = 0; state.phoneView = false; state.cmp = TASKS[i].cmp || 'side';
+  renderPicker(); renderTask(); aim();
+  const b = $('#picker').children[i]; if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+}
+
+function setTab(tab) {
+  state.tab = tab; state.phoneView = false;
+  if (tab === 'points') state.cmp = task().cmp || 'side';
+  $$('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  for (const id of ['move', 'setup', 'points']) $('#panel-' + id).hidden = tab !== id;
+  renderTask(); aim();
+}
+
+/** Is the whole body (and the test's lines or chair) in the phone's picture for the whole test? */
+let framing = null;
+function computeFraming() {
+  const tk = task(), W = view.width, H = view.height, pc = phoneCam(tk.phone, W, H), proj = projector(pc), rr = pc.rect;
+  const out = { head: false, feet: false, hands: false }, m = rr.w * .01;
+  const inside = q => q.z > .05 && q.x >= rr.x + m && q.x <= rr.x + rr.w - m && q.y >= rr.y + m && q.y <= rr.y + rr.h - m;
+  const [t0, t1] = tk.frameWindow || [0, tk.dur];
+  for (let tt = t0; tt < t1; tt += .2) {
+    const J = makeBody(tk.pose(tt));
+    if (!inside(proj(add(J.head, sc(J.hu, B.headR))))) out.head = true;
+    for (const S of ['L', 'R']) {
+      if (!inside(proj(J['toe' + S])) || !inside(proj(J['heel' + S]))) out.feet = true;
+      if (!inside(proj(J['hand' + S]))) out.hands = true;
+    }
+  }
+  let scene = null;
+  if (tk.scene) scene = tk.scene.every(p => inside(proj([p.x, p.y, p.z])));
+  return { out, scene };
+}
+
+const view = $('#view'), vctx = view.getContext('2d');
+let TS = 1;
+/** The app's settings: language, appearance and text size (also when the app changes them while the page is open). */
+function configure(c) {
+  if (LANGS.includes(c.lang)) lang = c.lang;
+  if (c.theme === 'light' || c.theme === 'dark') document.documentElement.dataset.theme = c.theme;
+  if (c.ts !== undefined) TS = clamp(parseFloat(c.ts) || 1, .85, 1.6);
+  document.documentElement.style.setProperty('--ts', String(TS));
+}
+configure(CFG);
+if (EMBED) $('#hint').dataset.i18n = 'hint_touch';
+let lastStep = -1, cueTimer = null;
+
+$$('.tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+$$('.lang button').forEach(b => b.addEventListener('click', () => { lang = b.dataset.lang; applyLang(); }));
+$('#play').addEventListener('click', () => { state.playing = !state.playing; $('#play').textContent = t(state.playing ? 'pause' : 'play'); });
+$('#slow').addEventListener('click', e => { state.slow = !state.slow; e.currentTarget.setAttribute('aria-pressed', String(state.slow)); });
+$$('#views button').forEach(b => b.addEventListener('click', () => {
+  const tk = task(), base = tk.view.move;
+  const v = { front: [0, .18], side: [tk.sideAz, .14], above: [.3, 1.3] }[b.dataset.view];
+  goal.az = v[0]; goal.el = v[1]; goal.dist = base[2]; goal.target = base[3].slice();
+}));
+$('#mix').addEventListener('input', e => { state.mix = +e.target.value; });
+$$('#cmp button').forEach(b => b.addEventListener('click', () => {
+  state.cmp = b.dataset.cmp; $$('#cmp button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); aim();
+}));
+$('#phoneBtn').addEventListener('click', () => {
+  state.phoneView = !state.phoneView;
+  $('#phoneBtn').textContent = t(state.phoneView ? 'phone_on' : 'phone_off');
+  $('#phoneBtn').setAttribute('aria-pressed', String(state.phoneView));
+});
+
+// look around: drag, pinch, wheel, arrow keys
+const pointers = new Map();
+let pinch = 0;
+const stopFollowing = () => { goal.az = null; goal.el = null; $('#hint').classList.add('gone'); };
+view.addEventListener('pointerdown', e => { if (state.phoneView) return; view.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); stopFollowing(); });
+view.addEventListener('pointermove', e => {
+  const prev = pointers.get(e.pointerId);
+  if (!prev) return;
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pointers.size === 1) { cam.az -= (e.clientX - prev[0]) * .011; cam.el = clamp(cam.el + (e.clientY - prev[1]) * .008, .02, 1.45); }
+  else if (pointers.size === 2) { const [a, b] = [...pointers.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch) goal.dist = clamp(goal.dist * pinch / d, 1.5, 14); pinch = d; }
+});
+const lift = e => { pointers.delete(e.pointerId); pinch = 0; };
+view.addEventListener('pointerup', lift);
+view.addEventListener('pointercancel', lift);
+view.addEventListener('wheel', e => { e.preventDefault(); goal.dist = clamp(goal.dist * (1 + e.deltaY * .001), 1.5, 14); }, { passive: false });
+view.addEventListener('keydown', e => {
+  const d = { ArrowLeft: [.15, 0], ArrowRight: [-.15, 0], ArrowUp: [0, .1], ArrowDown: [0, -.1] }[e.key];
+  if (!d) return;
+  e.preventDefault(); stopFollowing();
+  cam.az += d[0]; cam.el = clamp(cam.el + d[1], .02, 1.45);
+});
+
+function resize() {
+  const r = view.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = Math.max(2, Math.round(r.width * dpr)), H = Math.max(2, Math.round(r.height * dpr));
+  if (view.width !== W || view.height !== H) { view.width = W; view.height = H; framing = null; }
+}
+
+function showCue(text) {
+  const el = $('#cue'); el.textContent = text; el.classList.add('on');
+  clearTimeout(cueTimer); cueTimer = setTimeout(() => el.classList.remove('on'), 900);
+}
+
+/* ================================================================ loop */
+let last = performance.now();
+function draw() {
+  const tk = task(), W = view.width, H = view.height;
+  const scene = { task: tk, bodies: bodiesAt(state.t), phone: state.tab === 'setup', phoneView: state.tab === 'setup' && state.phoneView,
+                  roomOffset: sideBySide() ? sideOffset() : null };
+  if (state.tab === 'setup' && !scene.phoneView) { scene.dims = tk.dims; scene.labels = (tk.labels || []).map(l => ({ p: l.p, text: L(l.text), tone: l.tone })); }
+  if (tk.bubble && !scene.phoneView) {                    // what is said aloud, or what the helper reads off
+    const mb = scene.bodies.find(b => b.main), bb = mb && tk.bubble(state.t, mb.J);
+    if (bb) scene.labels = (scene.labels || []).concat([{ p: bb.p, text: bb.text, tone: 'ink' }]);
+  }
+  if (scene.phoneView) {
+    const pc = phoneCam(tk.phone, W, H);
+    render(vctx, W, H, pc, scene);
+    const r = pc.rect, rad = Math.min(r.w, r.h) * .06;
+    vctx.save(); vctx.fillStyle = colors.stage; vctx.globalAlpha = .86;
+    vctx.beginPath(); vctx.rect(0, 0, W, H); vctx.roundRect ? vctx.roundRect(r.x, r.y, r.w, r.h, rad) : vctx.rect(r.x, r.y, r.w, r.h); vctx.fill('evenodd');
+    vctx.globalAlpha = 1; vctx.strokeStyle = colors.ink; vctx.lineWidth = Math.max(2, W / 200);
+    vctx.beginPath(); vctx.roundRect ? vctx.roundRect(r.x, r.y, r.w, r.h, rad) : vctx.rect(r.x, r.y, r.w, r.h); vctx.stroke(); vctx.restore();
+  } else {
+    render(vctx, W, H, orbitCam(cam, W, H), scene);
+  }
+  // chips, cue, framing
+  $('#chipMain').textContent = tk.chip(state.t);
+  const note = tk.note ? tk.note(state.t) : '';
+  $('#chipNote').hidden = !note; $('#chipNote').textContent = note;
+  let si = 0; tk.steps.forEach((st, i) => { if (state.t >= st.t) si = i; });
+  if (si !== lastStep) {
+    $$('#steps li').forEach((li, i) => { if (i === si) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current'); });
+    if (lastStep !== -1 && tk.steps[si].cue) showCue(t(tk.steps[si].cue));
+    lastStep = si;
+  }
+  const fc = $('#frameCheck');
+  $('#frameCheck').title = tk.frameWindow ? P('只看计时的那一段', 'Judged over the timed part', 'Se juzga solo la parte cronometrada') : '';
+  fc.hidden = !scene.phoneView;
+  $('#hint').hidden = scene.phoneView;
+  if (scene.phoneView) {
+    if (!framing) framing = computeFraming();
+    const parts = Object.entries(framing.out).filter(([, v]) => v).map(([k]) => t('part_' + k));
+    const lines = [parts.length ? t('frame_bad', { parts: parts.join(t('sep')) }) : t('frame_ok')];
+    if (framing.scene !== null) lines.push(framing.scene ? t('frame_scene_ok', { what: L(tk.sceneWhat) }) : t('frame_scene_bad', { what: L(tk.sceneWhat) }));
+    $('#frameText').textContent = lines.join(' · ');
+    $('#frameText').className = parts.length || framing.scene === false ? 'warn' : 'ok';
+  }
+}
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  const raw = Math.min(.05, (now - last) / 1000);
+  last = now;
+  if (document.hidden) return;
+  const tk = task();
+  if (state.playing) {
+    const before = state.t;
+    state.t += raw * (state.slow ? .35 : 1);
+    if (tk.cueStop && before < tk.cueStop && state.t >= tk.cueStop) showCue(t('stop'));
+    if (state.t >= tk.dur) { state.t -= tk.dur; lastStep = -1; }
+  }
+  const ease = 1 - Math.pow(.002, raw);
+  if (goal.az !== null) { cam.az += (goal.az - cam.az) * ease; cam.el += (goal.el - cam.el) * ease; }
+  cam.dist += (goal.dist - cam.dist) * ease;
+  cam.target = cam.target.map((v, i) => v + (goal.target[i] - v) * ease);
+  draw();
+}
+
+readColors();
+{ const i = TASKS.findIndex(x => x.id === CFG.test); if (i >= 0) { state.task = i; state.cmp = TASKS[i].cmp || 'side'; } }
+applyLang();
+if (['move', 'setup', 'points'].includes(CFG.tab)) setTab(CFG.tab);
+aim();
+Object.assign(cam, { az: goal.az + .35, el: goal.el, dist: goal.dist, target: goal.target.slice() });
+resize();
+new ResizeObserver(() => resize()).observe($('#app'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+requestAnimationFrame(frame);
+
+// for automated checks
+window.__mw = { state, cam, goal, TASKS, setTab, selectTask, draw, makeBody, computeFraming: () => computeFraming(),
+                configure: c => { configure(c); readColors(); applyLang(); framing = null; } };
+}
+</script>
+</body>
+</html>
